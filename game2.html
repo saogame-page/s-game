@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>マイクラ風 神経衰弱</title>
+    <style>
+        body { text-align: center; font-family: 'Arial', sans-serif; background-color: #262626; color: white; }
+        h1 { color: #22c55e; }
+        .grid { display: grid; grid-template-columns: repeat(5, 60px); gap: 8px; justify-content: center; margin-top: 20px; }
+        .card { width: 60px; height: 60px; background-color: #16a34a; border: 3px solid #15803d; border-radius: 8px; cursor: pointer; font-size: 24px; display: flex; align-items: center; justify-content: center; user-select: none; }
+        .card.flipped { background-color: #e5e7eb; color: black; }
+        .card.matched { background-color: #9ca3af; cursor: default; }
+    </style>
+</head>
+<body>
+
+    <h1>⛏️ 神経衰弱</h1>
+    <div class="grid" id="grid"></div>
+    <p id="message">同じブロックを揃えてね！</p>
+
+    <script>
+        const blocks = ['💎', '💎', '🪵', '🪵', '🧱', '🧱', '⚔️', '⚔️', '🔥', '🔥', '🍎', '🍎', '🌊', '🌊', '🌲', '🌲', '⛏️', '⛏️', 'TNT', 'TNT'];
+        blocks.sort(() => Math.random() - 0.5);
+        
+        const grid = document.getElementById('grid');
+        let flippedCards = [];
+        let matchedCount = 0;
+
+        blocks.forEach((symbol, index) => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.dataset.symbol = symbol;
+            card.onclick = function() {
+                if (flippedCards.length < 2 && !this.classList.contains('flipped')) {
+                    this.classList.add('flipped');
+                    this.innerText = this.dataset.symbol;
+                    flippedCards.push(this);
+
+                    if (flippedCards.length === 2) {
+                        checkMatch();
+                    }
+                }
+            };
+            grid.appendChild(card);
+        });
+
+        function checkMatch() {
+            const [card1, card2] = flippedCards;
+            if (card1.dataset.symbol === card2.dataset.symbol) {
+                card1.classList.add('matched');
+                card2.classList.add('matched');
+                matchedCount += 2;
+                flippedCards = [];
+                if (matchedCount === blocks.length) document.getElementById('message').innerText = "すごい！全部見つけた！🎉";
+            } else {
+                setTimeout(() => {
+                    card1.classList.remove('flipped');
+                    card1.innerText = '';
+                    card2.classList.remove('flipped');
+                    card2.innerText = '';
+                    flippedCards = [];
+                }, 1000);
+            }
+        }
+    </script>
+</body>
+</html>
