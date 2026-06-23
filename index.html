@@ -49,7 +49,10 @@
             border-radius: 8px;
         }
         #kanji-text {
-            font-size: 5em; font-weight: bold; color: #333; display: none;
+            font-size: 6em; 
+            font-weight: bold; color: #333; display: none;
+            margin: 0;
+            line-height: 1;
         }
         #message {
             font-size: 1.2em; font-weight: bold; height: 30px; margin-bottom: 15px; color: #333;
@@ -124,28 +127,34 @@
             { name: "ステゴサウルス", img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/697.png" }
         ],
         kanji: [
-            { name: "やま", kanji: "山" },
-            { name: "かわ", kanji: "川" },
-            { name: "みず", kanji: "水" },
-            { name: "ひ", kanji: "火" },
-            { name: "き", kanji: "木" },
-            { name: "ひと", kanji: "人" },
-            { name: "くるま", kanji: "車" },
-            { name: "むし", kanji: "虫" }
+            { name: "やま", text: "山" },
+            { name: "かわ", text: "川" },
+            { name: "みず", text: "水" },
+            { name: "ひ", text: "火" },
+            { name: "き", text: "木" },
+            { name: "ひと", text: "人" },
+            { name: "くるま", text: "車" },
+            { name: "むし", text: "虫" }
         ],
         animal: [
-            { name: "ライオン", img: "https://images.unsplash.com/photo-1546182990-dffeafbe841d?w=400" },
-            { name: "ゾウ", img: "https://images.unsplash.com/photo-1557050543-4d5f4e07ef46?w=400" },
-            { name: "キリン", img: "https://images.unsplash.com/photo-1547721064-da6cfb341d50?w=400" },
-            { name: "パンダ", img: "https://images.unsplash.com/photo-1507608869274-d3177c8bb4c7?w=400" },
-            { name: "シマウマ", img: "https://images.unsplash.com/photo-1501705388883-4ed8a543392c?w=400" }
+            { name: "ライオン", text: "🦁" },
+            { name: "ゾウ", text: "🐘" },
+            { name: "キリン", text: "🦒" },
+            { name: "パンダ", text: "🐼" },
+            { name: "トラ", text: "🐯" },
+            { name: "ウサギ", text: "🐰" },
+            { name: "サル", text: "🐒" },
+            { name: "ペンギン", text: "🐧" }
         ],
         vehicle: [
-            { name: "ひこうき", img: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=400" },
-            { name: "でんしゃ", img: "https://images.unsplash.com/photo-1519683935302-33f63b824177?w=400" },
-            { name: "パトカー", img: "https://images.unsplash.com/photo-1566367576585-051277d52997?w=400" },
-            { name: "しょうぼうしゃ", img: "https://images.unsplash.com/photo-1599740441464-55f410298a00?w=400" },
-            { name: "ふね", img: "https://images.unsplash.com/photo-1505705694340-019e1e335916?w=400" }
+            { name: "ひこうき", text: "✈️" },
+            { name: "でんしゃ", text: "🚃" },
+            { name: "パトカー", text: "🚓" },
+            { name: "しょうぼうしゃ", text: "🚒" },
+            { name: "ふね", text: "🚢" },
+            { name: "じてんしゃ", text: "🚲" },
+            { name: "バス", text: "🚌" },
+            { name: "くるま", text: "🚗" }
         ]
     };
 
@@ -208,13 +217,15 @@
         let finalChoices = [correctItem.name, wrongChoices[0], wrongChoices[1]];
         finalChoices.sort(() => Math.random() - 0.5);
 
-        if (currentCategory === 'kanji') {
-            kanjiElement.textContent = correctItem.kanji;
+        if (correctItem.text) {
+            kanjiElement.textContent = correctItem.text;
             kanjiElement.style.display = 'block';
-            messageDiv.textContent = 'この かんじ の よみかたは？';
-        } else {
+            imgElement.style.display = 'none';
+            messageDiv.textContent = currentCategory === 'kanji' ? 'この かんじ の よみかたは？' : 'これは なあに？';
+        } else if (correctItem.img) {
             imgElement.src = correctItem.img;
             imgElement.style.display = 'block';
+            kanjiElement.style.display = 'none';
             messageDiv.textContent = 'これは なあに？';
         }
 
