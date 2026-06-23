@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>わくわく 3たくクイズ</title>
+    <style>
+        body {
+            font-family: 'Hiragino Maru Gothic ProN', 'Rounded M+ 1c', 'Meiryo', sans-serif;
+            background-color: #f2f2f2;
+            text-align: center;
+            margin: 0;
+            padding: 10px;
+        }
+        .game-container {
+            background-color: #ffffff;
+            max-width: 500px;
+            margin: 0 auto;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            border: 4px solid #ffcb05;
+        }
+        h1 { color: #3b4cca; margin-top: 0; font-size: 1.5em; }
+        
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 0 5px;
+        }
+        #score-display {
+            font-size: 1.2em; font-weight: bold; color: #ff0000;
+        }
+        .back-menu-btn {
+            padding: 5px 15px; font-size: 0.9em; border: 2px solid #aaa;
+            background-color: #eee; color: #333; border-radius: 8px;
+            cursor: pointer; font-weight: bold;
+        }
+        .back-menu-btn:hover { background-color: #ddd; }
+
+        .image-box {
+            height: 200px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px;
+            background-color: #f9f9f9; border-radius: 10px; overflow: hidden;
+        }
+        #quiz-image {
+            max-height: 100%; max-width: 100%; display: none;
+            border-radius: 8px;
+        }
+        #kanji-text {
+            font-size: 5em; font-weight: bold; color: #333; display: none;
+        }
+        #message {
+            font-size: 1.2em; font-weight: bold; height: 30px; margin-bottom: 15px; color: #333;
+        }
+        .choices-container {
+            display: flex; flex-direction: column; gap: 10px;
+        }
+        button {
+            padding: 15px; font-size: 1.2em; border: 2px solid #3b4cca; background-color: #ffffff;
+            color: #3b4cca; border-radius: 10px; cursor: pointer; transition: all 0.2s; font-weight: bold;
+        }
+        button:disabled { opacity: 0.7; cursor: not-allowed; }
+        
+        .menu-btn {
+            background-color: #3b4cca; color: #fff; margin-bottom: 5px; border-color: #3b4cca;
+        }
+        .menu-btn:hover { background-color: #2a3aa3; }
+
+        #menu-screen, #game-area, #clear-screen { display: none; }
+        #menu-screen { display: block; }
+
+        #clear-screen h2 { color: #ff0000; font-size: 2em; margin-bottom: 10px; }
+        #clear-screen p { font-size: 1.2em; font-weight: bold; }
+        .restart-btn { background-color: #ffcb05; color: #333; border-color: #ffcb05; margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="game-container">
+    <h1>わくわく 3たくクイズ</h1>
+    
+    <div id="menu-screen">
+        <p style="font-size: 1.2em; font-weight: bold;">どの クイズで あそぶ？</p>
+        <div class="choices-container">
+            <button class="menu-btn" onclick="startGame('dino')">🦖 きょうりゅう クイズ</button>
+            <button class="menu-btn" onclick="startGame('kanji')">✏️ しょうがく１ねんせいの かんじ</button>
+            <button class="menu-btn" onclick="startGame('animal')">🦁 どうぶつ クイズ</button>
+            <button class="menu-btn" onclick="startGame('vehicle')">🚄 のりもの クイズ</button>
+        </div>
+    </div>
+    
+    <div id="game-area">
+        <div class="status-bar">
+            <div id="score-display">スコア: 0 / 10</div>
+            <button class="back-menu-btn" onclick="backToMenu()">↩ メニューにもどる</button>
+        </div>
+        
+        <div class="image-box">
+            <img id="quiz-image" src="" alt="クイズ画像">
+            <div id="kanji-text"></div>
+        </div>
+
+        <div id="message">これは なあに？</div>
+        <div class="choices-container" id="choices"></div>
+    </div>
+
+    <div id="clear-screen">
+        <h2>🎉 ゲームクリア！ 🎉</h2>
+        <p>10もん せいかい！おめでとう！</p>
+        <button class="restart-btn" onclick="backToMenu()">メニューに もどる</button>
+    </div>
+
+</div>
+
+<script>
+    const ALL_QUIZZES = {
+        dino: [
+            { name: "ティラノサウルス", img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/248.png" },
+            { name: "トリケラトプス", img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/411.png" },
+            { name: "プテラノドン", img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/142.png" },
+            { name: "ブラキオサウルス", img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/1017.png" },
+            { name: "ステゴサウルス", img: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/697.png" }
+        ],
+        kanji: [
+            { name: "やま", kanji: "山" },
+            { name: "かわ", kanji: "川" },
+            { name: "みず", kanji: "水" },
+            { name: "ひ", kanji: "火" },
+            { name: "き", kanji: "木" },
+            { name: "ひと", kanji: "人" },
+            { name: "くるま", kanji: "車" },
+            { name: "むし", kanji: "虫" }
+        ],
+        animal: [
+            { name: "ライオン", img: "https://images.unsplash.com/photo-1546182990-dffeafbe841d?w=400" },
+            { name: "ゾウ", img: "https://images.unsplash.com/photo-1557050543-4d5f4e07ef46?w=400" },
+            { name: "キリン", img: "https://images.unsplash.com/photo-1547721064-da6cfb341d50?w=400" },
+            { name: "パンダ", img: "https://images.unsplash.com/photo-1507608869274-d3177c8bb4c7?w=400" },
+            { name: "シマウマ", img: "https://images.unsplash.com/photo-1501705388883-4ed8a543392c?w=400" }
+        ],
+        vehicle: [
+            { name: "ひこうき", img: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=400" },
+            { name: "でんしゃ", img: "https://images.unsplash.com/photo-1519683935302-33f63b824177?w=400" },
+            { name: "パトカー", img: "https://images.unsplash.com/photo-1566367576585-051277d52997?w=400" },
+            { name: "しょうぼうしゃ", img: "https://images.unsplash.com/photo-1599740441464-55f410298a00?w=400" },
+            { name: "ふね", img: "https://images.unsplash.com/photo-1505705694340-019e1e335916?w=400" }
+        ]
+    };
+
+    let currentCategory = '';
+    let currentScore = 0;
+    let currentCorrectAnswer = null;
+    let audioCtx;
+    let nextQuestionTimeout = null;
+
+    function playSound(isCorrect) {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const now = audioCtx.currentTime;
+        
+        const playTone = (freq, start, dur, type='sine') => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type; osc.frequency.value = freq;
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            gain.gain.setValueAtTime(0.1, start);
+            gain.gain.exponentialRampToValueAtTime(0.01, start + dur);
+            osc.start(start); osc.stop(start + dur);
+        };
+
+        if (isCorrect) {
+            playTone(880, now, 0.3); playTone(659, now + 0.12, 0.4);
+        } else {
+            playTone(150, now, 0.15, 'sawtooth'); playTone(150, now + 0.18, 0.2, 'sawtooth');
+        }
+    }
+
+    function startGame(category) {
+        currentCategory = category;
+        currentScore = 0;
+        document.getElementById('score-display').textContent = `スコア: 0 / 10`;
+        document.getElementById('menu-screen').style.display = 'none';
+        document.getElementById('clear-screen').style.display = 'none';
+        document.getElementById('game-area').style.display = 'block';
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        const imgElement = document.getElementById('quiz-image');
+        const kanjiElement = document.getElementById('kanji-text');
+        const choicesDiv = document.getElementById('choices');
+        const messageDiv = document.getElementById('message');
+
+        imgElement.style.display = 'none';
+        kanjiElement.style.display = 'none';
+        choicesDiv.innerHTML = '';
+        messageDiv.textContent = 'もんだい を えらんでいます...';
+        messageDiv.style.color = '#333';
+
+        const dataList = ALL_QUIZZES[currentCategory];
+        const correctItem = dataList[Math.floor(Math.random() * dataList.length)];
+        currentCorrectAnswer = correctItem;
+
+        let wrongChoices = dataList.filter(item => item.name !== correctItem.name).map(item => item.name);
+        wrongChoices.sort(() => Math.random() - 0.5);
+        let finalChoices = [correctItem.name, wrongChoices[0], wrongChoices[1]];
+        finalChoices.sort(() => Math.random() - 0.5);
+
+        if (currentCategory === 'kanji') {
+            kanjiElement.textContent = correctItem.kanji;
+            kanjiElement.style.display = 'block';
+            messageDiv.textContent = 'この かんじ の よみかたは？';
+        } else {
+            imgElement.src = correctItem.img;
+            imgElement.style.display = 'block';
+            messageDiv.textContent = 'これは なあに？';
+        }
+
+        finalChoices.forEach(choiceName => {
+            const btn = document.createElement('button');
+            btn.textContent = choiceName;
+            btn.onclick = () => checkAnswer(choiceName, btn);
+            choicesDiv.appendChild(btn);
+        });
+    }
+
+    function checkAnswer(selectedName, clickedButton) {
+        const buttons = document.querySelectorAll('#choices button');
+        const messageDiv = document.getElementById('message');
+        buttons.forEach(btn => btn.disabled = true);
+
+        if (selectedName === currentCorrectAnswer.name) {
+            currentScore++;
+            document.getElementById('score-display').textContent = `スコア: ${currentScore} / 10`;
+            messageDiv.textContent = 'せいかい！';
+            messageDiv.style.color = '#e3350d';
+            clickedButton.style.backgroundColor = '#e3350d';
+            clickedButton.style.color = '#fff';
+            
+            playSound(true);
+
+            if (currentScore >= 10) {
+                nextQuestionTimeout = setTimeout(() => {
+                    document.getElementById('game-area').style.display = 'none';
+                    document.getElementById('clear-screen').style.display = 'block';
+                }, 1500);
+                return;
+            }
+        } else {
+            messageDiv.textContent = `ざんねん！せいかいは「${currentCorrectAnswer.name}」`;
+            messageDiv.style.color = '#3b4cca';
+            playSound(false);
+            
+            buttons.forEach(btn => {
+                if (btn.textContent === currentCorrectAnswer.name) {
+                    btn.style.backgroundColor = '#e3350d';
+                    btn.style.color = '#fff';
+                }
+            });
+        }
+
+        nextQuestionTimeout = setTimeout(loadQuestion, 2500);
+    }
+
+    function backToMenu() {
+        if (nextQuestionTimeout) {
+            clearTimeout(nextQuestionTimeout);
+        }
+        document.getElementById('game-area').style.display = 'none';
+        document.getElementById('clear-screen').style.display = 'none';
+        document.getElementById('menu-screen').style.display = 'block';
+    }
+</script>
+
+</body>
+</html>
