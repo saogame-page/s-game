@@ -5,34 +5,78 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>わくわく 3たくクイズ</title>
     <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            font-family: 'Hiragino Maru Gothic ProN', 'Rounded M+ 1c', 'Meiryo', sans-serif;
+            font-family: 'Hiragino Maru Gothic ProN', 'Meiryo', sans-serif;
             background-color: #f2f2f2;
+            min-height: 100vh;
+            display: flex;
+        }
+
+        /* ===== サイドバー ===== */
+        .sidebar {
+            width: 200px;
+            min-height: 100vh;
+            background-color: #3b4cca;
+            padding: 20px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+        .sidebar h2 {
+            color: #ffcb05;
+            font-size: 1em;
             text-align: center;
-            margin: 0;
-            padding: 10px;
+            margin-bottom: 10px;
+            border-bottom: 2px solid #ffcb05;
+            padding-bottom: 8px;
+        }
+        .sidebar a {
+            display: block;
+            background-color: #ffffff;
+            color: #3b4cca;
+            text-decoration: none;
+            padding: 10px 12px;
+            border-radius: 10px;
+            font-size: 0.9em;
+            font-weight: bold;
+            text-align: center;
+            transition: background 0.2s;
+        }
+        .sidebar a:hover { background-color: #ffcb05; color: #333; }
+        .sidebar a.active { background-color: #ffcb05; color: #333; }
+        .sidebar .section-label {
+            color: #aac0ff;
+            font-size: 0.75em;
+            margin-top: 10px;
+            padding-left: 4px;
+        }
+
+        /* ===== メインエリア ===== */
+        .main {
+            flex: 1;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding: 30px 20px;
         }
         .game-container {
             background-color: #ffffff;
+            width: 100%;
             max-width: 500px;
-            margin: 0 auto;
             border-radius: 15px;
             padding: 20px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
             border: 4px solid #ffcb05;
         }
-        h1 { color: #3b4cca; margin-top: 0; font-size: 1.5em; }
-        
+        h1 { color: #3b4cca; margin-top: 0; font-size: 1.5em; text-align: center; }
+
         .status-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-            padding: 0 5px;
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 10px; padding: 0 5px;
         }
-        #score-display {
-            font-size: 1.2em; font-weight: bold; color: #ff0000;
-        }
+        #score-display { font-size: 1.2em; font-weight: bold; color: #ff0000; }
         .back-menu-btn {
             padding: 5px 15px; font-size: 0.9em; border: 2px solid #aaa;
             background-color: #eee; color: #333; border-radius: 8px;
@@ -41,39 +85,31 @@
         .back-menu-btn:hover { background-color: #ddd; }
 
         .image-box {
-            height: 200px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px;
-            background-color: #f9f9f9; border-radius: 10px; overflow: hidden;
+            height: 200px; display: flex; align-items: center; justify-content: center;
+            margin-bottom: 20px; background-color: #f9f9f9; border-radius: 10px; overflow: hidden;
         }
-        #quiz-image {
-            max-height: 100%; max-width: 100%; display: none;
-            border-radius: 8px;
-        }
+        #quiz-image { max-height: 100%; max-width: 100%; display: none; border-radius: 8px; }
         #kanji-text {
-            font-size: 6em; 
-            font-weight: bold; color: #333; display: none;
-            margin: 0;
-            line-height: 1;
+            font-size: 6em; font-weight: bold; color: #333; display: none;
+            margin: 0; line-height: 1;
         }
         #message {
-            font-size: 1.2em; font-weight: bold; height: 30px; margin-bottom: 15px; color: #333;
+            font-size: 1.2em; font-weight: bold; height: 30px;
+            margin-bottom: 15px; color: #333; text-align: center;
         }
-        .choices-container {
-            display: flex; flex-direction: column; gap: 10px;
-        }
+        .choices-container { display: flex; flex-direction: column; gap: 10px; }
         button {
-            padding: 15px; font-size: 1.2em; border: 2px solid #3b4cca; background-color: #ffffff;
-            color: #3b4cca; border-radius: 10px; cursor: pointer; transition: all 0.2s; font-weight: bold;
+            padding: 15px; font-size: 1.2em; border: 2px solid #3b4cca;
+            background-color: #ffffff; color: #3b4cca; border-radius: 10px;
+            cursor: pointer; transition: all 0.2s; font-weight: bold;
         }
         button:disabled { opacity: 0.7; cursor: not-allowed; }
-        
-        .menu-btn {
-            background-color: #3b4cca; color: #fff; margin-bottom: 5px; border-color: #3b4cca;
-        }
+        .menu-btn { background-color: #3b4cca; color: #fff; margin-bottom: 5px; border-color: #3b4cca; }
         .menu-btn:hover { background-color: #2a3aa3; }
 
-        #menu-screen, #game-area, #clear-screen { display: none; }
         #menu-screen { display: block; }
-
+        #game-area { display: none; }
+        #clear-screen { display: none; text-align: center; }
         #clear-screen h2 { color: #ff0000; font-size: 2em; margin-bottom: 10px; }
         #clear-screen p { font-size: 1.2em; font-weight: bold; }
         .restart-btn { background-color: #ffcb05; color: #333; border-color: #ffcb05; margin-top: 20px; }
@@ -81,40 +117,52 @@
 </head>
 <body>
 
-<div class="game-container">
-    <h1>わくわく 3たくクイズ</h1>
-    
-    <div id="menu-screen">
-        <p style="font-size: 1.2em; font-weight: bold;">どの クイズで あそぶ？</p>
-        <div class="choices-container">
-            <button class="menu-btn" onclick="startGame('dino')">🦖 きょうりゅう クイズ</button>
-            <button class="menu-btn" onclick="startGame('kanji')">✏️ しょうがく１ねんせいの かんじ</button>
-            <button class="menu-btn" onclick="startGame('animal')">🦁 どうぶつ クイズ</button>
-            <button class="menu-btn" onclick="startGame('vehicle')">🚄 のりもの クイズ</button>
-        </div>
-    </div>
-    
-    <div id="game-area">
-        <div class="status-bar">
-            <div id="score-display">スコア: 0 / 10</div>
-            <button class="back-menu-btn" onclick="backToMenu()">↩ メニューにもどる</button>
-        </div>
-        
-        <div class="image-box">
-            <img id="quiz-image" src="" alt="クイズ画像">
-            <div id="kanji-text"></div>
+<!-- サイドバー -->
+<nav class="sidebar">
+    <h2>🎮 ゲームメニュー</h2>
+
+    <span class="section-label">📚 クイズ</span>
+    <a href="#" class="active">🦖 わくわくクイズ</a>
+    <a href="pokemon_quiz.html">🎴 ポケモンクイズ</a>
+
+    <span class="section-label">🃏 ゲーム</span>
+    <a href="game2.html">🧱 マイクラ神経衰弱</a>
+</nav>
+
+<!-- メインエリア -->
+<div class="main">
+    <div class="game-container">
+        <h1>わくわく 3たくクイズ</h1>
+
+        <div id="menu-screen">
+            <p style="font-size:1.2em; font-weight:bold; text-align:center; margin-bottom:12px;">どの クイズで あそぶ？</p>
+            <div class="choices-container">
+                <button class="menu-btn" onclick="startGame('dino')">🦖 きょうりゅう クイズ</button>
+                <button class="menu-btn" onclick="startGame('kanji')">✏️ しょうがく１ねんせいの かんじ</button>
+                <button class="menu-btn" onclick="startGame('animal')">🦁 どうぶつ クイズ</button>
+                <button class="menu-btn" onclick="startGame('vehicle')">🚄 のりもの クイズ</button>
+            </div>
         </div>
 
-        <div id="message">これは なあに？</div>
-        <div class="choices-container" id="choices"></div>
-    </div>
+        <div id="game-area">
+            <div class="status-bar">
+                <div id="score-display">スコア: 0 / 10</div>
+                <button class="back-menu-btn" onclick="backToMenu()">↩ メニューにもどる</button>
+            </div>
+            <div class="image-box">
+                <img id="quiz-image" src="" alt="クイズ画像">
+                <div id="kanji-text"></div>
+            </div>
+            <div id="message">これは なあに？</div>
+            <div class="choices-container" id="choices"></div>
+        </div>
 
-    <div id="clear-screen">
-        <h2>🎉 ゲームクリア！ 🎉</h2>
-        <p>10もん せいかい！おめでとう！</p>
-        <button class="restart-btn" onclick="backToMenu()">メニューに もどる</button>
+        <div id="clear-screen">
+            <h2>🎉 ゲームクリア！ 🎉</h2>
+            <p>10もん せいかい！おめでとう！</p>
+            <button class="restart-btn" onclick="backToMenu()">メニューに もどる</button>
+        </div>
     </div>
-
 </div>
 
 <script>
@@ -168,7 +216,6 @@
         if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         if (audioCtx.state === 'suspended') audioCtx.resume();
         const now = audioCtx.currentTime;
-        
         const playTone = (freq, start, dur, type='sine') => {
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
@@ -178,18 +225,19 @@
             gain.gain.exponentialRampToValueAtTime(0.01, start + dur);
             osc.start(start); osc.stop(start + dur);
         };
-
         if (isCorrect) {
-            playTone(880, now, 0.3); playTone(659, now + 0.12, 0.4);
+            playTone(880, now, 0.15);
+            playTone(1100, now + 0.15, 0.2);
         } else {
-            playTone(150, now, 0.15, 'sawtooth'); playTone(150, now + 0.18, 0.2, 'sawtooth');
+            playTone(150, now, 0.15, 'sawtooth');
+            playTone(150, now + 0.18, 0.2, 'sawtooth');
         }
     }
 
     function startGame(category) {
         currentCategory = category;
         currentScore = 0;
-        document.getElementById('score-display').textContent = `スコア: 0 / 10`;
+        document.getElementById('score-display').textContent = 'スコア: 0 / 10';
         document.getElementById('menu-screen').style.display = 'none';
         document.getElementById('clear-screen').style.display = 'none';
         document.getElementById('game-area').style.display = 'block';
@@ -249,7 +297,6 @@
             messageDiv.style.color = '#e3350d';
             clickedButton.style.backgroundColor = '#e3350d';
             clickedButton.style.color = '#fff';
-            
             playSound(true);
 
             if (currentScore >= 10) {
@@ -263,7 +310,6 @@
             messageDiv.textContent = `ざんねん！せいかいは「${currentCorrectAnswer.name}」`;
             messageDiv.style.color = '#3b4cca';
             playSound(false);
-            
             buttons.forEach(btn => {
                 if (btn.textContent === currentCorrectAnswer.name) {
                     btn.style.backgroundColor = '#e3350d';
@@ -276,20 +322,12 @@
     }
 
     function backToMenu() {
-        if (nextQuestionTimeout) {
-            clearTimeout(nextQuestionTimeout);
-        }
+        if (nextQuestionTimeout) clearTimeout(nextQuestionTimeout);
         document.getElementById('game-area').style.display = 'none';
         document.getElementById('clear-screen').style.display = 'none';
         document.getElementById('menu-screen').style.display = 'block';
     }
 </script>
-
-    <div style="margin-top: 30px;">
-    <a href="game2.html" style="font-size: 20px; color: blue; text-decoration: underline;">
-        👉 次のゲーム：マイクラ風 神経衰弱であそぶ！
-    </a>
-</div>
 
 </body>
 </html>
