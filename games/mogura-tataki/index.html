@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>🌿 もぐらたたき</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Kosugi+Maru&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ================================================================
+   背景・レイアウト
+================================================================ */
+body {
+  font-family: 'Kosugi Maru', 'Hiragino Maru Gothic ProN', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 18px 14px 48px;
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+
+  /* 空→草のグラデーション */
+  background:
+    linear-gradient(180deg,
+      #72c6e8 0%,
+      #a8dcf0 32%,
+      #5ab55a 32%,
+      #3d9c3d 100%);
+  background-attachment: fixed;
+}
+
+/* ================================================================
+   タイトル
+================================================================ */
+h1 {
+  font-size: clamp(1.5rem, 5.5vw, 2.1rem);
+  color: #fff;
+  text-shadow: 2px 3px 0 rgba(0,80,0,0.3);
+  letter-spacing: 3px;
+  margin-bottom: 12px;
+}
+
+/* ================================================================
+   HUD（時間・スコア）
+================================================================ */
+.hud {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: rgba(255,255,255,0.92);
+  border-radius: 22px;
+  padding: 10px 18px;
+  margin-bottom: 10px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.14);
+}
+
+.hud-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  flex-shrink: 0;
+}
+.hud-label { font-size: 0.68rem; color: #aaa; letter-spacing: 1px; }
+.hud-val   { font-size: 1.9rem; font-weight: bold; line-height: 1.1; }
+#hud-time  { color: #27ae60; min-width: 2.4rem; text-align: center; }
+#hud-score { color: #e67e22; min-width: 2.8rem; text-align: center; }
+#hud-time.danger { color: #e74c3c; animation: hud-pulse 0.45s ease-in-out infinite alternate; }
+@keyframes hud-pulse { to { transform: scale(1.13); } }
+
+/* タイマーバー */
+.timer-bar-outer {
+  flex: 1; margin: 0 12px;
+  height: 15px;
+  background: #e0e0e0;
+  border-radius: 99px;
+  overflow: hidden;
+}
+#timer-bar {
+  height: 100%;
+  width: 100%;
+  border-radius: 99px;
+  /* 残り時間に応じて色が変わる: 緑→黄→赤 */
+  background: linear-gradient(90deg, #e74c3c 0%, #f39c12 45%, #27ae60 100%);
+  background-size: 100%;
+  transition: width 0.95s linear;
+}
+
+/* ================================================================
+   フィールド（木の板）
+================================================================ */
+.field {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+}
+
+/* 木目ボード */
+.board {
+  background:
+    repeating-linear-gradient(
+      178deg,
+      rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 1px,
+      transparent 1px, transparent 18px
+    ),
+    linear-gradient(170deg, #b07d3a 0%, #8a5c1e 100%);
+  border-radius: 28px;
+  padding: clamp(14px, 3.5vw, 22px);
+  box-shadow:
+    0 9px 0 #5c3308,
+    0 16px 36px rgba(0,0,0,0.32);
+}
+
+/* ================================================================
+   穴グリッド
+================================================================ */
+.holes {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(11px, 2.8vw, 18px);
+}
+
+/* ── 穴 ── */
+.hole {
+  aspect-ratio: 1;
+  border-radius: 50%;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  touch-action: manipulation;
+
+  /* 土の穴 */
+  background: radial-gradient(ellipse at 40% 28%,
+    #5a3010 0%, #2a1206 55%, #130800 100%);
+  box-shadow:
+    inset 0 8px 22px rgba(0,0,0,0.8),
+    inset 0 -2px 6px rgba(180,100,30,0.12),
+    0 4px 0 rgba(0,0,0,0.35);
+}
+.hole:active {
+  box-shadow:
+    inset 0 12px 28px rgba(0,0,0,0.9),
+    0 1px 0 rgba(0,0,0,0.35);
+}
+
+/* ================================================================
+   もぐらイラスト
+================================================================ */
+.mole {
+  position: absolute;
+  bottom: -115%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 76%;
+  aspect-ratio: 0.88;   /* 少し縦長で可愛い */
+  pointer-events: none;
+  transition: bottom 0.13s cubic-bezier(0.18, 1.5, 0.6, 1);
+}
+.mole.up  { bottom: -6%; }
+
+/* 叩かれたとき：ぎゅっと縮んで消える */
+.mole.whacked {
+  animation: mole-whack 0.22s ease-in forwards;
+  transition: none;
+}
+@keyframes mole-whack {
+  0%   { transform: translateX(-50%) scale(1) rotate(0deg); }
+  25%  { transform: translateX(-50%) scale(1.18) rotate(-6deg); }
+  100% { transform: translateX(-50%) scale(0.05) rotate(18deg); }
+}
+
+/* ── 耳：非表示 ── */
+.mole-ears { display: none; }
+
+/* ── 頭・体 ── */
+.mole-head {
+  position: absolute;
+  top: 14%;
+  left: 0; right: 0; bottom: 0;
+  background: linear-gradient(155deg, #d49050 0%, #a06030 50%, #7a4018 100%);
+  border-radius: 50% 50% 44% 44%;
+  box-shadow: 0 -2px 6px rgba(0,0,0,0.2), inset 0 -4px 10px rgba(0,0,0,0.1);
+}
+
+/* お腹（薄い楕円） */
+.mole-tummy {
+  position: absolute;
+  bottom: 10%; left: 22%; right: 22%;
+  height: 38%;
+  background: radial-gradient(ellipse, #e8c890 0%, rgba(232,200,144,0) 80%);
+  border-radius: 50%;
+}
+
+/* ── 目 ── */
+.mole-eye {
+  position: absolute;
+  top: 26%;
+  width: 22%;
+  aspect-ratio: 1;
+  background: #fff;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+}
+.mole-eye.l { left: 14%; }
+.mole-eye.r { right: 14%; }
+
+/* 瞳 */
+.mole-eye::before {
+  content: '';
+  position: absolute;
+  top: 18%; left: 18%;
+  width: 58%; height: 58%;
+  background: #1a1a1a;
+  border-radius: 50%;
+}
+/* ハイライト */
+.mole-eye::after {
+  content: '';
+  position: absolute;
+  top: 14%; right: 18%;
+  width: 28%; height: 28%;
+  background: #fff;
+  border-radius: 50%;
+  z-index: 2;
+}
+
+/* ── 鼻 ── */
+.mole-nose {
+  position: absolute;
+  top: 49%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 26%;
+  aspect-ratio: 1.3;
+  background: radial-gradient(ellipse at 38% 32%, #f08888, #c04040);
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+/* ほっぺ（ピンクのチーク） */
+.mole-cheek {
+  position: absolute;
+  top: 46%;
+  width: 18%;
+  aspect-ratio: 1;
+  background: rgba(255,130,130,0.35);
+  border-radius: 50%;
+}
+.mole-cheek.l { left: 5%;  }
+.mole-cheek.r { right: 5%; }
+
+/* ヒゲ：非表示 */
+.mole-nose::before,
+.mole-nose::after { display: none; }
+
+/* ================================================================
+   ヒットエフェクト
+================================================================ */
+/* 「ポン！」テキスト */
+.pon-fx {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+  font-size: clamp(1.4rem, 4vw, 1.9rem);
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 2px 2px 0 #e08000, -1px -1px 0 #e08000;
+  transform: translate(-50%, -50%);
+  animation: pon-rise 0.55s ease-out forwards;
+}
+@keyframes pon-rise {
+  0%   { transform: translate(-50%, -50%) scale(0.4); opacity: 1; }
+  50%  { transform: translate(-50%, -130%) scale(1.2); opacity: 1; }
+  100% { transform: translate(-50%, -190%) scale(0.9); opacity: 0; }
+}
+
+/* 星パーティクル */
+.star-fx {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9998;
+  font-size: 1.2rem;
+  line-height: 1;
+  animation: star-fly var(--dur) ease-out forwards;
+}
+@keyframes star-fly {
+  0%   { transform: translate(0,0) scale(0.3) rotate(0deg);   opacity: 1; }
+  70%  { opacity: 1; }
+  100% { transform: translate(var(--tx),var(--ty)) scale(1) rotate(var(--tr)); opacity: 0; }
+}
+
+/* ================================================================
+   オーバーレイ（スタート・結果）
+================================================================ */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.54);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  backdrop-filter: blur(4px);
+}
+.overlay.hidden { display: none; }
+
+.card {
+  background: #fff;
+  border-radius: 30px;
+  padding: 34px 28px 30px;
+  text-align: center;
+  width: 90%;
+  max-width: 330px;
+  box-shadow: 0 14px 48px rgba(0,0,0,0.28);
+  animation: card-pop 0.38s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes card-pop {
+  from { transform: scale(0.4); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+
+.card-icon  { font-size: 4rem; display: block; margin-bottom: 6px; }
+.card-title { font-size: 1.85rem; color: #27ae60; letter-spacing: 1px; margin-bottom: 6px; }
+.card-desc  { font-size: 0.95rem; color: #999; line-height: 1.7; margin-bottom: 22px; }
+
+/* ── 結果スコア ── */
+.result-score-box {
+  background: #fff8ec;
+  border: 2px solid #ffd090;
+  border-radius: 18px;
+  padding: 12px 20px;
+  margin-bottom: 12px;
+}
+.result-score-num {
+  font-size: 4.8rem;
+  font-weight: bold;
+  color: #e67e22;
+  line-height: 1;
+}
+.result-score-lbl { font-size: 0.88rem; color: #bbb; }
+
+
+.result-comment {
+  font-size: 1.05rem;
+  font-weight: bold;
+  color: #555;
+  margin-bottom: 20px;
+}
+
+/* ── ボタン ── */
+.btn-row {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+
+.game-btn {
+  font-family: inherit;
+  font-size: 1.15rem;
+  font-weight: bold;
+  padding: 17px 28px;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  letter-spacing: 1px;
+  width: 100%;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.1s;
+}
+
+.btn-orange {
+  background: linear-gradient(155deg, #ffb347, #ff7f50);
+  color: #fff;
+  box-shadow: 0 7px 0 #c04000, 0 10px 22px rgba(200,80,0,0.2);
+}
+.btn-gray {
+  background: #fff;
+  color: #aaa;
+  border: 2px solid #e8e8e8;
+  box-shadow: 0 5px 0 #d8d8d8;
+  font-size: 1rem;
+}
+.btn-green {
+  background: linear-gradient(155deg, #6bcb77, #27ae60);
+  color: #fff;
+  box-shadow: 0 7px 0 #1a7a40, 0 10px 22px rgba(39,174,96,0.2);
+}
+
+/* 光沢 */
+.game-btn::before {
+  content: '';
+  position: absolute;
+  top: 4px; left: 10%; right: 10%;
+  height: 42%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.65) 0%, rgba(255,255,255,0) 100%);
+  border-radius: 0 0 50% 50%;
+  pointer-events: none;
+}
+
+.game-btn:hover:not(:disabled) { transform: translateY(-4px); }
+.game-btn:active:not(:disabled) {
+  transform: scaleX(1.04) scaleY(0.88) translateY(6px);
+  transition-duration: 0.07s;
+}
+.btn-orange:active { box-shadow: 0 1px 0 #c04000 !important; }
+.btn-gray:active   { box-shadow: 0 1px 0 #d8d8d8 !important; }
+.btn-green:active  { box-shadow: 0 1px 0 #1a7a40 !important; }
+</style>
+</head>
+<body>
+
+<h1>🌿 もぐらたたき 🌿</h1>
+
+<!-- HUD -->
+<div class="hud">
+  <div class="hud-stat">
+    <span class="hud-label">のこり</span>
+    <span class="hud-val" id="hud-time">30</span>
+  </div>
+  <div class="timer-bar-outer">
+    <div id="timer-bar"></div>
+  </div>
+  <div class="hud-stat">
+    <span class="hud-label">スコア</span>
+    <span class="hud-val" id="hud-score">0</span>
+  </div>
+</div>
+
+<!-- フィールド -->
+<div class="field">
+  <div class="board">
+    <div class="holes" id="holes-grid">
+      <!-- 穴はJSで生成 -->
+    </div>
+  </div>
+</div>
+
+<!-- スタートオーバーレイ -->
+<div class="overlay" id="ov-start">
+  <div class="card">
+    <span class="card-icon">🐾</span>
+    <div class="card-title">もぐらたたき</div>
+    <p class="card-desc">
+      でてきたもぐらを<br>すばやくたたこう！<br>
+      ⏱ 30びょうせいげん
+    </p>
+    <div class="btn-row">
+      <button class="game-btn btn-green" id="btn-start">スタート！</button>
+    </div>
+  </div>
+</div>
+
+<!-- 結果オーバーレイ -->
+<div class="overlay hidden" id="ov-result">
+  <div class="card">
+    <span class="card-icon" id="res-icon">🏆</span>
+    <div class="card-title">しゅうりょう！</div>
+    <div class="result-score-box">
+      <div class="result-score-num" id="res-score">0</div>
+      <div class="result-score-lbl">ひき たたいた！</div>
+    </div>
+    <div class="result-comment" id="res-comment"></div>
+    <div class="btn-row">
+      <button class="game-btn btn-orange" id="btn-retry">もういちどあそぶ 🔄</button>
+      <a class="game-btn btn-gray" id="btn-home" href="../../index.html">🏠 トップにもどる</a>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+//  定数
+// ============================================================
+const TOTAL_SEC  = 30;
+const HOLE_N     = 9;
+const STAR_GLYPHS = ['⭐','✨','🌟','💛','⭐','✨'];
+
+// ============================================================
+//  穴＋もぐらを生成
+// ============================================================
+const grid = document.getElementById('holes-grid');
+const holes = [];
+
+for (let i = 0; i < HOLE_N; i++) {
+  // 穴
+  const hole = document.createElement('div');
+  hole.className = 'hole';
+
+  // もぐら（耳 + 頭）
+  hole.innerHTML = `
+    <div class="mole" id="mole${i}">
+      <div class="mole-ears">
+        <div class="ear l"></div>
+        <div class="ear r"></div>
+      </div>
+      <div class="mole-head">
+        <div class="mole-tummy"></div>
+        <div class="mole-eye l"></div>
+        <div class="mole-eye r"></div>
+        <div class="mole-nose"></div>
+        <div class="mole-cheek l"></div>
+        <div class="mole-cheek r"></div>
+      </div>
+    </div>`;
+
+  grid.appendChild(hole);
+
+  const moleEl = hole.querySelector('.mole');
+  holes.push({ hole, mole: moleEl, up: false, hitTimer: null, downTimer: null });
+
+  // タップ：穴全体がターゲット（判定を広く）
+  hole.addEventListener('pointerdown', e => { e.preventDefault(); onHit(i, e); });
+}
+
+// ============================================================
+//  ゲーム状態
+// ============================================================
+let score       = 0;
+let timeLeft    = TOTAL_SEC;
+let gameActive  = false;
+let clockTimer  = null;
+let spawnTimers = [];
+
+// ============================================================
+//  スタート
+// ============================================================
+function startGame() {
+  score      = 0;
+  timeLeft   = TOTAL_SEC;
+  gameActive = false; // 直後にtrueにする
+
+  // 残ったもぐらを全員引っ込める
+  holes.forEach(h => { clearTimeout(h.hitTimer); clearTimeout(h.downTimer); lowerMole(h, true); });
+  spawnTimers.forEach(clearTimeout);
+  spawnTimers = [];
+  clearInterval(clockTimer);
+
+  updateHUD();
+  document.getElementById('ov-start').classList.add('hidden');
+  document.getElementById('ov-result').classList.add('hidden');
+
+  gameActive = true;
+
+  // タイマー
+  clockTimer = setInterval(() => {
+    timeLeft = Math.max(0, timeLeft - 1);
+    updateHUD();
+    if (timeLeft <= 0) endGame();
+  }, 1000);
+
+  // スポーン開始（少し間を置く）
+  scheduleSpawn(500);
+}
+
+// ============================================================
+//  HUD 更新
+// ============================================================
+function updateHUD() {
+  document.getElementById('hud-time').textContent  = timeLeft;
+  document.getElementById('hud-score').textContent = score;
+  document.getElementById('timer-bar').style.width = (timeLeft / TOTAL_SEC * 100) + '%';
+
+  const el = document.getElementById('hud-time');
+  if (timeLeft <= 10) el.classList.add('danger');
+  else                el.classList.remove('danger');
+}
+
+// ============================================================
+//  もぐらスポーン
+// ============================================================
+function scheduleSpawn(delay) {
+  if (!gameActive) return;
+  const id = setTimeout(spawnOne, delay);
+  spawnTimers.push(id);
+}
+
+function spawnOne() {
+  if (!gameActive) return;
+
+  // 空き穴からランダムに1つ選ぶ
+  const avail = holes.filter(h => !h.up);
+  if (avail.length > 0) {
+    const h = avail[Math.floor(Math.random() * avail.length)];
+    raiseMole(h);
+  }
+
+  // 難易度：時間が経つにつれ速く
+  const progress = 1 - timeLeft / TOTAL_SEC;
+  const base     = 880 - progress * 380;   // 880→500 ms
+  const jitter   = Math.random() * 280;
+  scheduleSpawn(base + jitter);
+}
+
+function raiseMole(h) {
+  if (h.up || !gameActive) return;
+  h.up = true;
+  h.mole.classList.remove('whacked');
+  h.mole.classList.add('up');
+
+  // 表示時間（だんだん短くなる）
+  const progress = 1 - timeLeft / TOTAL_SEC;
+  const visible  = 1350 - progress * 520 + Math.random() * 280;
+  h.downTimer = setTimeout(() => lowerMole(h), visible);
+}
+
+function lowerMole(h, immediate = false) {
+  clearTimeout(h.downTimer);
+  h.up = false;
+  h.mole.classList.remove('up');
+  if (immediate) h.mole.classList.remove('whacked');
+}
+
+// ============================================================
+//  タップ判定
+// ============================================================
+function onHit(idx, e) {
+  if (!gameActive) return;
+  const h = holes[idx];
+  if (!h.up) return;           // もぐらが出ていない
+
+  // スコア
+  score++;
+  updateHUD();
+
+  // アニメーション
+  clearTimeout(h.downTimer);
+  h.up = false;
+  h.mole.classList.add('whacked');
+  h.hitTimer = setTimeout(() => {
+    h.mole.classList.remove('up', 'whacked');
+  }, 250);
+
+  // エフェクト
+  showPon(e.clientX, e.clientY);
+  launchStars(e.clientX, e.clientY);
+  playHit();
+}
+
+// ============================================================
+//  「ポン！」エフェクト
+// ============================================================
+function showPon(cx, cy) {
+  const el = document.createElement('div');
+  el.className = 'pon-fx';
+  el.textContent = 'ポン！';
+  el.style.left = cx + 'px';
+  el.style.top  = cy + 'px';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 600);
+}
+
+// ============================================================
+//  星パーティクル
+// ============================================================
+function launchStars(cx, cy) {
+  const count = 5 + Math.floor(Math.random() * 3);
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('div');
+    el.className = 'star-fx';
+    el.textContent = STAR_GLYPHS[i % STAR_GLYPHS.length];
+
+    const angle = (360 / count) * i + Math.random() * 20 - 10;
+    const dist  = 40 + Math.random() * 65;
+    const tx    = Math.cos(angle * Math.PI / 180) * dist;
+    const ty    = Math.sin(angle * Math.PI / 180) * dist - 20;
+    const tr    = ((Math.random() - 0.5) * 400) + 'deg';
+    const dur   = (0.5 + Math.random() * 0.3) + 's';
+
+    el.style.left = cx + 'px';
+    el.style.top  = cy + 'px';
+    el.style.setProperty('--tx',  tx  + 'px');
+    el.style.setProperty('--ty',  ty  + 'px');
+    el.style.setProperty('--tr',  tr);
+    el.style.setProperty('--dur', dur);
+    el.style.animationDelay = (i * 0.035) + 's';
+    el.style.fontSize = (0.9 + Math.random() * 0.8) + 'rem';
+
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 1000);
+  }
+}
+
+// ============================================================
+//  効果音（Web Audio API）
+//  ※ 後から音声ファイルに差し替えやすいよう関数に分離
+// ============================================================
+let _ac;
+function getAC() { return _ac || (_ac = new (window.AudioContext || window.webkitAudioContext)()); }
+
+/** ヒット音 — 差し替えるときはここを変更 */
+function playHit() {
+  try {
+    const ac = getAC();
+    const o  = ac.createOscillator();
+    const g  = ac.createGain();
+    o.connect(g); g.connect(ac.destination);
+    o.type = 'square';
+    o.frequency.setValueAtTime(300, ac.currentTime);
+    o.frequency.exponentialRampToValueAtTime(680, ac.currentTime + 0.06);
+    g.gain.setValueAtTime(0.28, ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.18);
+    o.start(ac.currentTime);
+    o.stop(ac.currentTime + 0.2);
+  } catch(e) {}
+}
+
+/** 終了ファンファーレ — 差し替えるときはここを変更 */
+function playEnd() {
+  try {
+    const ac = getAC();
+    [523, 659, 784, 1047, 784, 1047, 1319].forEach((f, i) => {
+      const o = ac.createOscillator();
+      const g = ac.createGain();
+      o.connect(g); g.connect(ac.destination);
+      o.type = 'sine';
+      o.frequency.value = f;
+      const t = ac.currentTime + i * 0.12;
+      g.gain.setValueAtTime(0.22, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+      o.start(t); o.stop(t + 0.26);
+    });
+  } catch(e) {}
+}
+
+// ============================================================
+//  ゲーム終了
+// ============================================================
+function endGame() {
+  gameActive = false;
+  clearInterval(clockTimer);
+  spawnTimers.forEach(clearTimeout);
+  spawnTimers = [];
+
+  holes.forEach(h => lowerMole(h, true));
+
+  setTimeout(() => {
+    showResult();
+    playEnd();
+  }, 500);
+}
+
+// ============================================================
+//  結果画面
+// ============================================================
+function showResult() {
+  const icon    = getIcon(score);
+  const comment = getComment(score);
+
+  document.getElementById('res-score').textContent   = score;
+  document.getElementById('res-icon').textContent    = icon;
+  document.getElementById('res-comment').textContent = comment;
+
+  document.getElementById('ov-result').classList.remove('hidden');
+}
+
+function getIcon(s) {
+  if (s >= 25) return '🏆';
+  if (s >= 18) return '🌟';
+  if (s >= 10) return '😊';
+  if (s >= 4)  return '👍';
+  return '💪';
+}
+
+function getComment(s) {
+  if (s >= 25) return 'かんぺき！ チャンピオン！！';
+  if (s >= 18) return 'すごい！ とっても よくできました！';
+  if (s >= 10) return 'よくできました！';
+  if (s >= 4)  return 'がんばったね！';
+  if (s >= 1)  return 'またちょうせんしてみよう！';
+  return 'もっとがんばろう！';
+}
+
+// ============================================================
+//  ボタンイベント
+// ============================================================
+document.getElementById('btn-start').addEventListener('click', startGame);
+document.getElementById('btn-retry').addEventListener('click', startGame);
+</script>
+</body>
+</html>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    

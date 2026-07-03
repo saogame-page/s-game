@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🪐 惑星ポップ</title>
+  <link href="https://fonts.googleapis.com/css2?family=Kosugi+Maru&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Kosugi Maru', sans-serif;
+      height: 100dvh;
+      overflow: hidden;
+      user-select: none;
+      background:
+        radial-gradient(ellipse at 20% 80%, #14005a 0%, transparent 55%),
+        radial-gradient(ellipse at 80% 10%, #003060 0%, transparent 55%),
+        #030215;
+    }
+
+    /* 星 */
+    .stars {
+      position: fixed; inset: 0; pointer-events: none;
+      background-image:
+        radial-gradient(1.5px 1.5px at  8% 12%, #fff 0%, transparent 100%),
+        radial-gradient(1px   1px   at 22%  4%, #fff 0%, transparent 100%),
+        radial-gradient(2px   2px   at 40%  8%, #fff 0%, transparent 100%),
+        radial-gradient(1px   1px   at 60%  3%, #fff 0%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 75% 15%, #fff 0%, transparent 100%),
+        radial-gradient(1px   1px   at 90%  7%, #fff 0%, transparent 100%),
+        radial-gradient(2px   2px   at  5% 40%, #fff 0%, transparent 100%),
+        radial-gradient(1px   1px   at 30% 35%, #fff 0%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 55% 50%, #fff 0%, transparent 100%),
+        radial-gradient(1px   1px   at 85% 42%, #fff 0%, transparent 100%),
+        radial-gradient(2px   2px   at 15% 70%, #fff 0%, transparent 100%),
+        radial-gradient(1px   1px   at 45% 78%, #fff 0%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 70% 65%, #fff 0%, transparent 100%),
+        radial-gradient(1px   1px   at 95% 80%, #fff 0%, transparent 100%);
+      animation: twinkle 4s ease-in-out infinite alternate;
+    }
+    @keyframes twinkle { 0% { opacity: 0.3; } 100% { opacity: 1; } }
+
+    /* ================================================================
+       HUD
+    ================================================================ */
+    .hud {
+      position: fixed; top: 0; left: 0; right: 0;
+      padding: 12px 16px;
+      display: flex; justify-content: space-between; align-items: center;
+      z-index: 10;
+    }
+    .chip {
+      background: rgba(255,255,255,0.12);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 22px;
+      padding: 8px 18px;
+      color: #fff;
+      font-size: 1.3rem;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+    .chip-timer { transition: color 0.3s; }
+    .chip-timer.danger { color: #ff6b6b; animation: blink 0.5s ease-in-out infinite alternate; }
+    @keyframes blink { to { transform: scale(1.1); } }
+
+    /* ================================================================
+       惑星（PNG画像）
+    ================================================================ */
+    .planet {
+      position: fixed;
+      cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      animation: rise var(--dur) linear forwards;
+      filter: drop-shadow(0 0 var(--glow-size) var(--glow-color));
+      background: transparent;
+    }
+    .planet > img {
+      width: 100%; height: 100%;
+      object-fit: contain;
+      display: block;
+      pointer-events: none;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+    .planet.is-sun {
+      animation: rise var(--dur) linear forwards, sun-pulse 2s ease-in-out infinite;
+    }
+    @keyframes sun-pulse {
+      0%,100% { filter: drop-shadow(0 0 40px rgba(255,210,0,0.98)) drop-shadow(0 0 80px rgba(255,160,0,0.6)); }
+      50%      { filter: drop-shadow(0 0 70px rgba(255,210,0,0.98)) drop-shadow(0 0 130px rgba(255,160,0,0.5)); }
+    }
+    @keyframes rise {
+      0%   { transform: translateX(-50%) translateY(0); opacity: 0; }
+      4%   { opacity: 1; }
+      94%  { opacity: 0.92; }
+      100% { transform: translateX(-50%) translateY(calc(-115dvh)); opacity: 0; }
+    }
+    .planet.popped {
+      animation: pop-burst 0.25s ease-out forwards !important;
+      pointer-events: none;
+    }
+    @keyframes pop-burst {
+      0%   { transform: translateX(-50%) scale(1);    opacity: 1; }
+      40%  { transform: translateX(-50%) scale(1.6);  opacity: 0.85; }
+      100% { transform: translateX(-50%) scale(0.05); opacity: 0; }
+    }
+
+    /* ================================================================
+       パーティクル
+    ================================================================ */
+    .particle {
+      position: fixed; border-radius: 50%; pointer-events: none; z-index: 20;
+      animation: pfly var(--pd) ease-out var(--pdelay) forwards;
+    }
+    @keyframes pfly {
+      0%   { transform: translate(0, 0) scale(1);   opacity: 1; }
+      100% { transform: translate(var(--px), var(--py)) scale(0); opacity: 0; }
+    }
+
+    /* スコアポップ（獲得点数表示） */
+    .score-pop {
+      position: fixed;
+      z-index: 9999;          /* 最前面 */
+      pointer-events: none;
+      user-select: none;
+      white-space: nowrap;
+
+      color: #ffe033;
+      font-size: clamp(2rem, 7vw, 3rem);
+      font-weight: bold;
+
+      /* 白フチ（背景に埋もれない） */
+      -webkit-text-stroke: 3px rgba(0,0,0,0.85);
+      paint-order: stroke fill;
+      text-shadow:
+        0 0 16px rgba(255,220,0,1),
+        0 3px 10px rgba(0,0,0,0.95);
+
+      /* transform はアニメーションだけで制御（競合を避ける） */
+      animation: spop 0.7s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+    }
+    @keyframes spop {
+      0%   { transform: translate(-50%,   0px) scale(0.5); opacity: 0; }
+      12%  { opacity: 1; }
+      35%  { transform: translate(-50%, -38px) scale(1.25); opacity: 1; }
+      100% { transform: translate(-50%, -95px) scale(1.0);  opacity: 0; }
+    }
+
+    /* やめるボタン */
+    .btn-quit {
+      background: rgba(255,60,60,0.25);
+      border: 1px solid rgba(255,100,100,0.4);
+      border-radius: 18px;
+      padding: 6px 14px;
+      color: rgba(255,180,180,0.9);
+      font-family: 'Kosugi Maru', sans-serif;
+      font-size: 0.9rem;
+      cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      backdrop-filter: blur(6px);
+      transition: background 0.15s;
+      display: none;
+    }
+    .btn-quit.visible { display: block; }
+    .btn-quit:active { background: rgba(255,60,60,0.45); }
+
+    /* ================================================================
+       オーバーレイ共通
+    ================================================================ */
+    .overlay {
+      position: fixed; inset: 0; z-index: 50;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 16px;
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(5px);
+      padding: 20px;
+      overflow-y: auto;
+    }
+    .overlay.hidden { display: none; }
+
+    .ov-emoji { font-size: clamp(2.8rem, 10vw, 4.5rem); }
+    .ov-title {
+      font-size: clamp(1.6rem, 6vw, 2.8rem);
+      color: #fff;
+      text-shadow: 0 0 20px rgba(120,180,255,0.9);
+      text-align: center; line-height: 1.3;
+    }
+    .ov-sub {
+      font-size: clamp(0.9rem, 3.2vw, 1.2rem);
+      color: rgba(255,255,255,0.75);
+      text-align: center; line-height: 1.7;
+    }
+    .ov-score {
+      font-size: clamp(2rem, 8vw, 3.5rem);
+      color: #ffd700;
+      text-shadow: 0 0 18px rgba(255,215,0,0.8);
+      font-weight: bold;
+    }
+
+    /* ================================================================
+       ランキング通知
+    ================================================================ */
+    .rank-notice {
+      font-size: clamp(1.1rem, 4.5vw, 1.5rem);
+      font-weight: bold;
+      padding: 8px 22px;
+      border-radius: 24px;
+      text-align: center;
+      animation: notice-pop 0.45s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .rank-notice.hidden { display: none; }
+    .rank-notice.is-record {
+      background: linear-gradient(135deg, #ff6b00, #ffd700);
+      color: #fff;
+      box-shadow: 0 0 24px rgba(255,180,0,0.7);
+    }
+    .rank-notice.is-top3 {
+      background: linear-gradient(135deg, #5b4bff, #00c9ff);
+      color: #fff;
+      box-shadow: 0 0 24px rgba(0,160,255,0.5);
+    }
+    @keyframes notice-pop {
+      0%   { transform: scale(0.4); opacity: 0; }
+      70%  { transform: scale(1.08); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    /* ================================================================
+       ランキング表示
+    ================================================================ */
+    .ranking-box {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 18px;
+      padding: 14px 20px;
+      width: min(320px, 92vw);
+    }
+
+    /* ================================================================
+       惑星内訳ボックス
+    ================================================================ */
+    .tally-box {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 18px;
+      padding: 12px 18px;
+      width: min(320px, 92vw);
+    }
+    .tally-title {
+      text-align: center;
+      color: rgba(255,255,255,0.65);
+      font-size: 0.9rem;
+      margin-bottom: 8px;
+      letter-spacing: 1px;
+    }
+    .tally-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+    .tally-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 2px;
+      color: #fff;
+      font-size: clamp(0.9rem, 3.2vw, 1.05rem);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+    .tally-row:last-child { border-bottom: none; }
+    .tally-img {
+      width: 36px;
+      height: 36px;
+      object-fit: contain;
+      flex-shrink: 0;
+      display: block;
+    }
+    .tally-name { color: rgba(255,255,255,0.9); flex: 1; }
+    .tally-count { color: #ffd700; font-weight: bold; white-space: nowrap; margin-left: auto; }
+    .ranking-title {
+      text-align: center;
+      color: rgba(255,255,255,0.7);
+      font-size: 0.95rem;
+      margin-bottom: 10px;
+      letter-spacing: 1px;
+    }
+    .ranking-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 4px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      color: #fff;
+      font-size: clamp(1rem, 3.5vw, 1.15rem);
+    }
+    .ranking-row:last-child { border-bottom: none; }
+    .rank-medal { font-size: 1.3rem; width: 1.8em; text-align: center; flex-shrink: 0; }
+    .rank-pts { font-weight: bold; color: #ffd700; margin-left: auto; }
+    .rank-new-tag {
+      font-size: 0.75rem;
+      background: #ff4444;
+      color: #fff;
+      border-radius: 8px;
+      padding: 2px 7px;
+      flex-shrink: 0;
+    }
+    .ranking-empty {
+      text-align: center;
+      color: rgba(255,255,255,0.4);
+      font-size: 0.9rem;
+      padding: 8px 0;
+    }
+
+    /* ================================================================
+       ボタン・リンク
+    ================================================================ */
+    .btn {
+      padding: 15px 48px;
+      border: none; border-radius: 50px;
+      font-family: 'Kosugi Maru', sans-serif;
+      font-size: 1.25rem; font-weight: bold;
+      cursor: pointer; touch-action: manipulation;
+      text-decoration: none; text-align: center;
+      position: relative; overflow: hidden;
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+    .btn::before {
+      content: ''; position: absolute;
+      top: 4px; left: 10%; right: 10%; height: 42%;
+      background: linear-gradient(180deg, rgba(255,255,255,0.55) 0%, transparent 100%);
+      border-radius: 0 0 50% 50%;
+    }
+    .btn:active { transform: translateY(4px); transition-duration: 0.07s; }
+    .btn-blue {
+      background: linear-gradient(160deg, #4facfe, #1a6fd4);
+      color: #fff;
+      box-shadow: 0 6px 0 #1040a0, 0 8px 24px rgba(0,80,200,0.4);
+    }
+    .btn-blue:active { box-shadow: 0 2px 0 #1040a0, 0 4px 12px rgba(0,80,200,0.3); }
+    .home-link {
+      color: rgba(255,255,255,0.5); font-size: 0.9rem;
+      text-decoration: none; margin-top: -4px;
+    }
+    .home-link:hover { color: #fff; }
+  </style>
+</head>
+<body>
+
+<div class="stars"></div>
+
+<!-- HUD -->
+<div class="hud">
+  <div class="chip">🌟 <span id="score">0</span></div>
+  <button class="btn-quit" id="btn-quit" aria-label="ゲームをやめる">✕ やめる</button>
+  <div class="chip chip-timer" id="timer-chip">⏱ <span id="timer">30</span></div>
+</div>
+
+<!-- 惑星フィールド -->
+<div id="field"></div>
+
+<!-- スタート画面 -->
+<div class="overlay" id="ov-start">
+  <div class="ov-emoji">🪐</div>
+  <div class="ov-title">惑星ポップ</div>
+  <div class="ov-sub">うかんでくる惑星を<br>どんどんタップしてはじこう！<br>30びょうで なんてんとれるかな？</div>
+  <div id="start-ranking" class="ranking-box" style="display:none"></div>
+  <button class="btn btn-blue" id="btn-start">スタート！🚀</button>
+  <a class="home-link" href="../../index.html">← トップにもどる</a>
+</div>
+
+<!-- リザルト画面 -->
+<div class="overlay hidden" id="ov-result">
+  <div class="ov-emoji" id="result-emoji">🎉</div>
+  <div class="ov-title">じかんぎれ！</div>
+  <div class="ov-sub">ごうけいスコア</div>
+  <div class="ov-score">🌟 <span id="final-score">0</span> てん！</div>
+  <div class="rank-notice hidden" id="rank-notice"></div>
+  <div class="ranking-box" id="result-ranking"></div>
+  <div class="tally-box" id="result-tally"></div>
+  <button class="btn btn-blue" id="btn-retry">もういちど！</button>
+  <a class="home-link" href="../../index.html">← トップにもどる</a>
+</div>
+
+<script>
+  // ============================================================
+  //  🔊 サウンド
+  // ============================================================
+  let audioCtx = null;
+  function initAudio() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  function playPop(baseFreq = 440) {
+    if (!audioCtx) return;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(baseFreq, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(baseFreq * 0.4, audioCtx.currentTime + 0.22);
+    gain.gain.setValueAtTime(0.32, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.28);
+    osc.start(); osc.stop(audioCtx.currentTime + 0.30);
+    const osc2 = audioCtx.createOscillator();
+    const gain2 = audioCtx.createGain();
+    osc2.connect(gain2); gain2.connect(audioCtx.destination);
+    osc2.type = 'triangle';
+    osc2.frequency.value = baseFreq * 2;
+    gain2.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gain2.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.18);
+    osc2.start(); osc2.stop(audioCtx.currentTime + 0.19);
+  }
+
+  // ============================================================
+  //  🪐 惑星データ
+  // ============================================================
+  const IMG_BASE = '../../assets/images/planets/';
+
+  const PLANETS = [
+    { name: 'ちきゅう',   icon: '🌍', glow: 'rgba(50,150,255,0.85)',  glowSize: '26px', minSize: 70,  maxSize: 110, freq: 440, pts: 30, img: IMG_BASE + 'earth.png'   },
+    { name: 'たいよう',   icon: '☀️',  glow: 'rgba(255,210,0,0.98)',   glowSize: '52px', minSize: 90,  maxSize: 130, freq: 330, pts: 50, isSun: true, img: IMG_BASE + 'sun.png'     },
+    { name: 'どせい',     icon: '🪐',  glow: 'rgba(215,178,60,0.9)',   glowSize: '32px', minSize: 70,  maxSize: 110, freq: 392, pts: 40, img: IMG_BASE + 'saturn.png'  },
+    { name: 'かせい',     icon: '🔴',  glow: 'rgba(220,72,35,0.88)',   glowSize: '22px', minSize: 60,  maxSize: 95,  freq: 523, pts: 25, img: IMG_BASE + 'mars.png'    },
+    { name: 'すいせい',   icon: '⚫',  glow: 'rgba(160,152,138,0.7)',  glowSize: '16px', minSize: 48,  maxSize: 78,  freq: 660, pts: 15, img: IMG_BASE + 'mercury.png' },
+    { name: 'きんせい',   icon: '🌕',  glow: 'rgba(245,222,80,0.9)',   glowSize: '24px', minSize: 65,  maxSize: 100, freq: 494, pts: 25, img: IMG_BASE + 'venus.png'   },
+    { name: 'かいおうせい', icon: '🔵', glow: 'rgba(28,100,252,0.92)', glowSize: '30px', minSize: 65,  maxSize: 105, freq: 370, pts: 20, img: IMG_BASE + 'neptune.png' },
+    { name: 'もくせい',   icon: '🟠',  glow: 'rgba(205,132,50,0.88)',  glowSize: '34px', minSize: 85,  maxSize: 130, freq: 350, pts: 35, img: IMG_BASE + 'jupiter.png' },
+    { name: 'つき',       icon: '🌙',  glow: 'rgba(200,200,200,0.7)',  glowSize: '18px', minSize: 55,  maxSize: 88,  freq: 580, pts: 10, img: IMG_BASE + 'moon.png'    },
+    { name: 'てんのうせい', icon: '🩵', glow: 'rgba(100,220,200,0.85)',glowSize: '28px', minSize: 62,  maxSize: 98,  freq: 415, pts: 20, img: IMG_BASE + 'uranus.png'  },
+  ];
+
+  // ============================================================
+  //  🏆 ランキング（localStorage）
+  //  キー: 'planetPop_ranking'  値: [{score, date}, ...]
+  // ============================================================
+  const RANK_KEY = 'planetPop_ranking';
+  const RANK_MAX = 3;
+  const MEDALS   = ['🥇', '🥈', '🥉'];
+
+  function loadRanking() {
+    try {
+      return JSON.parse(localStorage.getItem(RANK_KEY) || '[]');
+    } catch(e) { return []; }
+  }
+
+  /**
+   * スコアを記録してランキング情報を返す
+   * @returns {{ ranking, isNewRecord, isTop3, position }}
+   */
+  function saveRanking(newScore) {
+    const old = loadRanking();
+    const oldTop = old.length > 0 ? old[0].score : -1;
+
+    const entry = {
+      score: newScore,
+      date: new Date().toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' })
+    };
+    const merged = [...old, entry];
+    merged.sort((a, b) => b.score - a.score);
+
+    const position = merged.indexOf(entry) + 1;   // 1-indexed
+    const isTop3   = position <= RANK_MAX;
+    const isNewRecord = isTop3 && newScore > oldTop;
+
+    const saved = merged.slice(0, RANK_MAX);
+    try { localStorage.setItem(RANK_KEY, JSON.stringify(saved)); } catch(e) {}
+
+    return { ranking: saved, isNewRecord, isTop3, position, entry };
+  }
+
+  /** 惑星内訳HTML文字列を生成（PNG画像使用・1回分のみ） */
+  const JP_NAMES = {
+    'ちきゅう': '地球', 'たいよう': '太陽', 'どせい': '土星',
+    'かせい': '火星', 'すいせい': '水星', 'きんせい': '金星',
+    'かいおうせい': '海王星', 'もくせい': '木星',
+    'つき': '月', 'てんのうせい': '天王星'
+  };
+
+  function buildTallyHTML(tally) {
+    const entries = Object.values(tally).filter(t => t.count > 0);
+    const title = '<div class="tally-title">🪐 タッチした惑星</div>';
+    if (entries.length === 0) {
+      return title + '<p class="ranking-empty">なし</p>';
+    }
+    // 多い順 → 同数は惑星データ順を維持
+    entries.sort((a, b) => b.count - a.count);
+    const rows = entries.map(t => {
+      const label = JP_NAMES[t.jpName] || t.jpName;
+      return `<div class="tally-row">
+        <img class="tally-img" src="${t.img}" alt="${label}" draggable="false">
+        <span class="tally-name">${label}</span>
+        <span class="tally-count">${t.count}こ</span>
+      </div>`;
+    }).join('');
+    return title + `<div class="tally-list">${rows}</div>`;
+  }
+
+  /** ランキングHTML文字列を生成 */
+  function buildRankingHTML(ranking, highlightEntry = null) {
+    if (!ranking || ranking.length === 0) {
+      return '<p class="ranking-empty">まだきろくがありません</p>';
+    }
+    const title = '<div class="ranking-title">🏆 ベスト3</div>';
+    const rows = ranking.map((r, i) => {
+      const isNew = highlightEntry && r === highlightEntry;
+      return `<div class="ranking-row">
+        <span class="rank-medal">${MEDALS[i] || (i + 1) + '位'}</span>
+        <span>${r.date}</span>
+        <span class="rank-pts">${r.score.toLocaleString()} てん</span>
+        ${isNew ? '<span class="rank-new-tag">NEW</span>' : ''}
+      </div>`;
+    }).join('');
+    return title + rows;
+  }
+
+  // ============================================================
+  //  ゲーム設定・状態
+  // ============================================================
+  const TOTAL_SEC = 30;
+  let score = 0, timeLeft = TOTAL_SEC, gameActive = false;
+  let clockTimer = null, spawnTimer = null;
+  let tally = {};   // { 'ちきゅう': { icon, jpName, count }, ... }
+
+  // ============================================================
+  //  ゲームフロー
+  // ============================================================
+  function startGame() {
+    score = 0; timeLeft = TOTAL_SEC; gameActive = true; tally = {};
+    document.getElementById('score').textContent = '0';
+    document.getElementById('timer').textContent = TOTAL_SEC;
+    document.getElementById('timer-chip').classList.remove('danger');
+    document.getElementById('ov-start').classList.add('hidden');
+    document.getElementById('ov-result').classList.add('hidden');
+    document.getElementById('field').innerHTML = '';
+    setQuitVisible(true);
+
+    clockTimer = setInterval(tick, 1000);
+    scheduleSpawn();
+  }
+
+  function tick() {
+    timeLeft--;
+    document.getElementById('timer').textContent = timeLeft;
+    if (timeLeft <= 8) document.getElementById('timer-chip').classList.add('danger');
+    if (timeLeft <= 0) endGame();
+  }
+
+  function endGame() {
+    gameActive = false;
+    clearInterval(clockTimer);
+    clearTimeout(spawnTimer);
+
+    // スコア表示
+    document.getElementById('final-score').textContent = score.toLocaleString();
+
+    // 結果絵文字
+    const emoji = score >= 400 ? '🏆' : score >= 200 ? '🎉' : score >= 100 ? '😊' : '🪐';
+    document.getElementById('result-emoji').textContent = emoji;
+
+    // ランキング保存・通知
+    const { ranking, isNewRecord, isTop3, entry } = saveRanking(score);
+
+    const noticeEl = document.getElementById('rank-notice');
+    if (isNewRecord) {
+      noticeEl.textContent = '🎊 しんきろく！';
+      noticeEl.className = 'rank-notice is-record';
+    } else if (isTop3) {
+      noticeEl.textContent = '⭐ ランキングいり！';
+      noticeEl.className = 'rank-notice is-top3';
+    } else {
+      noticeEl.className = 'rank-notice hidden';
+    }
+
+    // ランキング表示
+    document.getElementById('result-ranking').innerHTML =
+      buildRankingHTML(ranking, isTop3 ? entry : null);
+
+    // 惑星内訳表示
+    document.getElementById('result-tally').innerHTML = buildTallyHTML(tally);
+    setQuitVisible(false);
+
+    document.getElementById('ov-result').classList.remove('hidden');
+  }
+
+  // ============================================================
+  //  惑星スポーン
+  // ============================================================
+  function scheduleSpawn() {
+    if (!gameActive) return;
+    const elapsed  = TOTAL_SEC - timeLeft;
+    const interval = Math.max(350, 1300 - elapsed * 28);
+    spawnTimer = setTimeout(() => { spawnPlanet(); scheduleSpawn(); }, interval);
+  }
+
+  function spawnPlanet() {
+    if (!gameActive) return;
+    const p    = PLANETS[Math.floor(Math.random() * PLANETS.length)];
+    const size = Math.round(p.minSize + Math.random() * (p.maxSize - p.minSize));
+    const margin = size / 2 + 8;
+    const x    = margin + Math.random() * (window.innerWidth - margin * 2);
+    const dur  = 3.5 + Math.random() * 2.5;
+
+    const b = document.createElement('div');
+    b.className = 'planet' + (p.isSun ? ' is-sun' : '');
+    b.style.cssText = `
+      width:${size}px; height:${size}px;
+      left:${x}px; top:calc(100dvh + ${size}px);
+      --glow-color:${p.glow}; --glow-size:${p.glowSize};
+      --dur:${dur}s;
+    `;
+
+    const img = document.createElement('img');
+    img.src = p.img;
+    img.alt = p.name;
+    img.draggable = false;
+    b.appendChild(img);
+
+    b.addEventListener('pointerdown', e => {
+      e.stopPropagation();
+      if (!gameActive || b.classList.contains('popped')) return;
+
+      // popped付与前に座標を取得（アニメーション開始後はtransformが変わる）
+      const rect = b.getBoundingClientRect();
+      const cx   = rect.left + rect.width  / 2;
+      const cy   = rect.top  + rect.height / 2;
+
+      b.classList.add('popped');
+
+      playPop(p.freq);
+      spawnParticles(cx, cy, p.glow);
+      showScorePop(cx, cy, p.pts);
+
+      score += p.pts;
+      document.getElementById('score').textContent = score.toLocaleString();
+
+      // 内訳カウント
+      if (!tally[p.name]) tally[p.name] = { img: p.img, jpName: p.name, count: 0 };
+      tally[p.name].count++;
+      setTimeout(() => b.remove(), 270);
+    });
+
+    document.getElementById('field').appendChild(b);
+    setTimeout(() => { if (b.parentNode) b.remove(); }, (dur + 0.1) * 1000);
+  }
+
+  // ============================================================
+  //  エフェクト
+  // ============================================================
+  function spawnParticles(cx, cy, color) {
+    const n = 9;
+    for (let i = 0; i < n; i++) {
+      const angle = (i / n) * Math.PI * 2 + Math.random() * 0.4;
+      const dist  = 35 + Math.random() * 55;
+      const sz    = 5 + Math.random() * 9;
+      const dur   = (0.35 + Math.random() * 0.3).toFixed(2);
+      const delay = (Math.random() * 0.05).toFixed(2);
+      const p = document.createElement('div');
+      p.className = 'particle';
+      p.style.cssText = `
+        left:${cx}px; top:${cy}px;
+        width:${sz}px; height:${sz}px;
+        margin:-${sz/2}px 0 0 -${sz/2}px;
+        background:${color};
+        --px:${(Math.cos(angle)*dist).toFixed(1)}px;
+        --py:${(Math.sin(angle)*dist).toFixed(1)}px;
+        --pd:${dur}s; --pdelay:${delay}s;
+      `;
+      document.body.appendChild(p);
+      setTimeout(() => p.remove(), (parseFloat(dur) + parseFloat(delay) + 0.05) * 1000);
+    }
+  }
+
+  function showScorePop(x, y, pts) {
+    const el = document.createElement('div');
+    el.className = 'score-pop';
+    el.textContent = `+${pts}`;
+    el.style.left = x + 'px';
+    el.style.top  = y + 'px';
+    document.body.appendChild(el);
+    // animationend で削除 + 900ms fallback（アニメーションが失敗した場合の保険）
+    const cleanup = () => { if (el.parentNode) el.remove(); };
+    el.addEventListener('animationend', cleanup, { once: true });
+    setTimeout(cleanup, 900);
+  }
+
+  // ============================================================
+  //  スタート画面にランキングを表示
+  // ============================================================
+  function renderStartRanking() {
+    const ranking = loadRanking();
+    const box = document.getElementById('start-ranking');
+    if (ranking.length === 0) {
+      box.style.display = 'none';
+      return;
+    }
+    box.style.display = 'block';
+    box.innerHTML = buildRankingHTML(ranking);
+  }
+
+  // ============================================================
+  //  イベント
+  // ============================================================
+  // やめるボタンの表示切替ヘルパー
+  function setQuitVisible(v) {
+    document.getElementById('btn-quit').classList.toggle('visible', v);
+  }
+
+  document.getElementById('btn-start').addEventListener('click', () => { initAudio(); startGame(); });
+  document.getElementById('btn-retry').addEventListener('click', () => { initAudio(); startGame(); });
+  document.getElementById('btn-quit').addEventListener('click', () => {
+    if (gameActive) endGame();
+  });
+
+  // 初期化
+  renderStartRanking();
+</script>
+</body>
+</html>

@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🍎 くだものキャッチ</title>
+  <link href="https://fonts.googleapis.com/css2?family=Kosugi+Maru&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Kosugi Maru', sans-serif;
+      height: 100dvh;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    /* ================================================================
+       背景レイヤー ── 色変更はここ
+    ================================================================ */
+    .sky {
+      position: fixed; inset: 0; bottom: 18%;
+      background: linear-gradient(180deg, #5bbef5 0%, #90d8f9 60%, #c2ecff 100%);
+    }
+    .ground {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      height: 18%;
+      background: linear-gradient(180deg, #68c840 0%, #4aa020 50%, #357818 100%);
+    }
+    /* 芝生の丸みライン */
+    .ground::before {
+      content: '';
+      position: absolute; top: -10px; left: -5%; right: -5%;
+      height: 22px;
+      background: radial-gradient(ellipse at 50% 100%, #78d84a 0%, #58b030 100%);
+      border-radius: 60% 60% 0 0;
+    }
+
+    /* 雲 ── 変更ポイント：雲の色・数・速度 */
+    .cloud {
+      position: absolute;
+      font-size: clamp(2rem, 6vw, 3.5rem);
+      opacity: 0.75;
+      animation: cloud-move var(--cdur) linear var(--cdelay) infinite;
+      top: var(--ctop);
+    }
+    @keyframes cloud-move {
+      from { left: -12%; }
+      to   { left: 112%; }
+    }
+
+    /* ================================================================
+       HUD
+    ================================================================ */
+    .hud {
+      position: fixed; top: 0; left: 0; right: 0;
+      padding: 10px 14px;
+      display: flex; justify-content: space-between; align-items: center;
+      z-index: 20;
+      gap: 8px;
+    }
+    .chip {
+      background: rgba(255,255,255,0.9);
+      border-radius: 18px;
+      padding: 7px 14px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: #444;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.14);
+      white-space: nowrap;
+    }
+    .chip-lives { letter-spacing: 2px; }
+
+    /* ================================================================
+       カゴ
+    ================================================================ */
+    #basket {
+      position: fixed;
+      font-size: clamp(3rem, 10vw, 4.5rem);
+      line-height: 1;
+      pointer-events: none;
+      z-index: 10;
+      transform: translateX(-50%);
+      filter: drop-shadow(0 6px 8px rgba(0,0,0,0.25));
+      /* スムーズ追従 ── 変更ポイント：数値を大きくするとラグが増える */
+      transition: left 0.06s linear;
+    }
+
+    /* ================================================================
+       くだもの
+    ================================================================ */
+    .fruit {
+      position: fixed;
+      font-size: clamp(2.2rem, 8vw, 3.5rem);
+      line-height: 1;
+      pointer-events: none;
+      z-index: 8;
+      transform: translateX(-50%);
+      filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2));
+    }
+    .fruit.catch-anim {
+      animation: fruit-catch 0.35s ease-out forwards;
+    }
+    @keyframes fruit-catch {
+      0%   { transform: translateX(-50%) scale(1) rotate(0deg); }
+      40%  { transform: translateX(-50%) scale(1.6) rotate(10deg); }
+      100% { transform: translateX(-50%) scale(0) rotate(-20deg); opacity: 0; }
+    }
+    .fruit.miss-anim {
+      animation: fruit-miss 0.4s ease-in forwards;
+    }
+    @keyframes fruit-miss {
+      0%   { transform: translateX(-50%) scale(1) rotate(0deg); opacity: 1; }
+      60%  { transform: translateX(-50%) scale(0.6) rotate(30deg); opacity: 0.6; }
+      100% { transform: translateX(-50%) scale(0) rotate(60deg); opacity: 0; }
+    }
+
+    /* キャッチエフェクト */
+    .catch-fx {
+      position: fixed;
+      pointer-events: none; z-index: 30;
+      font-size: 1.6rem;
+      animation: cfx 0.7s ease-out forwards;
+    }
+    @keyframes cfx {
+      0%   { transform: translate(-50%, 0) scale(0.3); opacity: 1; }
+      60%  { transform: translate(-50%, -50px) scale(1.2); opacity: 1; }
+      100% { transform: translate(-50%, -90px) scale(0.9); opacity: 0; }
+    }
+    .life-lost-fx {
+      position: fixed; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 3rem;
+      pointer-events: none; z-index: 30;
+      animation: lfx 0.7s ease-out forwards;
+    }
+    @keyframes lfx {
+      0%   { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
+      50%  { transform: translate(-50%, -50%) scale(1.4); opacity: 1; }
+      100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+    }
+
+    /* ================================================================
+       オーバーレイ
+    ================================================================ */
+    .overlay {
+      position: fixed; inset: 0; z-index: 50;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(0,0,0,0.42);
+      backdrop-filter: blur(4px);
+    }
+    .overlay.hidden { display: none; }
+
+    .card {
+      background: #fff;
+      border-radius: 28px;
+      padding: 30px 24px 24px;
+      width: 90%; max-width: 360px;
+      text-align: center;
+      box-shadow: 0 14px 44px rgba(0,0,0,0.22);
+      animation: card-pop 0.38s cubic-bezier(0.18,1.5,0.5,1);
+    }
+    @keyframes card-pop {
+      from { transform: scale(0.35); opacity: 0; }
+      to   { transform: scale(1);    opacity: 1; }
+    }
+
+    .card-emoji  { font-size: 3rem; margin-bottom: 4px; }
+    .card-title  { font-size: clamp(1.5rem, 5.5vw, 2.2rem); margin-bottom: 6px; }
+    .card-sub    { font-size: 0.95rem; color: #777; margin-bottom: 16px; line-height: 1.7; }
+    .card-score  { font-size: clamp(1.8rem, 6vw, 2.8rem); color: #e67e22; font-weight: bold; margin-bottom: 22px; }
+
+    .btn {
+      display: block; width: 100%;
+      padding: 14px; margin-bottom: 10px;
+      border: none; border-radius: 50px;
+      font-family: 'Kosugi Maru', sans-serif;
+      font-size: 1.1rem; font-weight: bold;
+      cursor: pointer; touch-action: manipulation;
+      text-decoration: none; text-align: center;
+      position: relative; overflow: hidden;
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+    .btn::before {
+      content: ''; position: absolute;
+      top: 4px; left: 10%; right: 10%; height: 42%;
+      background: linear-gradient(180deg, rgba(255,255,255,0.6) 0%, transparent 100%);
+      border-radius: 0 0 50% 50%;
+    }
+    .btn:active { transform: translateY(4px); transition-duration: 0.07s; }
+    .btn-orange {
+      background: linear-gradient(160deg, #ff9a3c, #e06010);
+      color: #fff;
+      box-shadow: 0 6px 0 #a03a00, 0 8px 20px rgba(200,80,0,0.35);
+    }
+    .btn-orange:active { box-shadow: 0 2px 0 #a03a00; }
+    .btn-gray {
+      background: linear-gradient(160deg, #ccc, #999);
+      color: #fff;
+      box-shadow: 0 5px 0 #666;
+    }
+    .btn-gray:active { box-shadow: 0 2px 0 #666; }
+  </style>
+</head>
+<body>
+
+<!-- 背景 -->
+<div class="sky">
+  <div class="cloud" style="--cdur:20s; --cdelay:0s;   --ctop:6%">☁️</div>
+  <div class="cloud" style="--cdur:28s; --cdelay:-10s; --ctop:14%">☁️</div>
+  <div class="cloud" style="--cdur:16s; --cdelay:-5s;  --ctop:4%; font-size:2rem">☁️</div>
+</div>
+<div class="ground"></div>
+
+<!-- HUD -->
+<div class="hud">
+  <div class="chip chip-lives" id="lives-chip">❤️❤️❤️</div>
+  <div class="chip">🍎 <span id="score">0</span></div>
+  <div class="chip">⏱ <span id="timer">40</span></div>
+</div>
+
+<!-- カゴ -->
+<div id="basket">🧺</div>
+
+<!-- くだもの描画エリア -->
+<div id="field"></div>
+
+<!-- スタート画面 -->
+<div class="overlay" id="ov-start">
+  <div class="card">
+    <div class="card-emoji">🍎🍊🍋</div>
+    <div class="card-title">くだものキャッチ</div>
+    <div class="card-sub">
+      おちてくるくだものを<br>かごでうけとめよう！<br><br>
+      📱 スマホ：ゆびでかごをうごかしてね<br>
+      🖥 PC：マウスでうごかしてね
+    </div>
+    <button class="btn btn-orange" id="btn-start">スタート！🎉</button>
+    <a class="btn btn-gray" href="../../index.html">← トップにもどる</a>
+  </div>
+</div>
+
+<!-- リザルト画面 -->
+<div class="overlay hidden" id="ov-result">
+  <div class="card">
+    <div class="card-emoji" id="result-emoji">🎉</div>
+    <div class="card-title" id="result-title">すごい！</div>
+    <div class="card-sub">つかまえたくだもの</div>
+    <div class="card-score">🍎 <span id="final-score">0</span> こ！</div>
+    <button class="btn btn-orange" id="btn-retry">もういちど！</button>
+    <a class="btn btn-gray" href="../../index.html">← トップにもどる</a>
+  </div>
+</div>
+
+<script>
+  // ============================================================
+  //  🔊 サウンド ── 実音声ファイルで差し替える場合はここを変更
+  // ============================================================
+  let audioCtx = null;
+  function initAudio() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  function playCatch() {
+    if (!audioCtx) return;
+    // キャッチ音：明るいアルペジオ (C-E-G)
+    [[0, 523], [0.1, 659], [0.2, 784]].forEach(([t, f]) => {
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.connect(g); g.connect(audioCtx.destination);
+      o.type = 'sine';
+      o.frequency.value = f;
+      g.gain.setValueAtTime(0.22, audioCtx.currentTime + t);
+      g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + t + 0.18);
+      o.start(audioCtx.currentTime + t);
+      o.stop(audioCtx.currentTime + t + 0.18);
+    });
+  }
+  function playMiss() {
+    if (!audioCtx) return;
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.connect(g); g.connect(audioCtx.destination);
+    o.type = 'sawtooth';
+    o.frequency.setValueAtTime(280, audioCtx.currentTime);
+    o.frequency.exponentialRampToValueAtTime(120, audioCtx.currentTime + 0.22);
+    g.gain.setValueAtTime(0.14, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
+    o.start(); o.stop(audioCtx.currentTime + 0.25);
+  }
+
+  // ============================================================
+  //  🍎 くだも設定 ── ここを変えると難易度・見た目が変わります
+  // ============================================================
+  const FRUITS    = ['🍎','🍊','🍋','🍇','🍓','🍉','🍑','🍌','🥝','🍈'];
+  const TOTAL_SEC = 40;  // ゲーム時間（秒）
+  const MAX_LIVES = 3;
+  const BASKET_W  = 85; // キャッチ判定の半径（px）── 大きいほど簡単
+
+  // ============================================================
+  //  状態
+  // ============================================================
+  let score = 0, lives = MAX_LIVES, timeLeft = TOTAL_SEC;
+  let gameActive = false;
+  let basketX = window.innerWidth / 2;
+  let clockTimer = null, spawnTimer = null, rafId = null;
+  let activeFruits = [];
+
+  // ================================================================
+  //  カゴ追従 (マウス・タッチ)
+  // ================================================================
+  const basketEl = document.getElementById('basket');
+
+  // カゴの高さ（地面から少し上）
+  function groundFrac() { return window.innerHeight * 0.18; }
+  function basketBottom() { return groundFrac() + 12; }
+  function basketYTop() {
+    return window.innerHeight - basketBottom() - basketEl.offsetHeight;
+  }
+
+  function clampX(x) {
+    const half = 40;
+    return Math.max(half, Math.min(window.innerWidth - half, x));
+  }
+
+  document.addEventListener('mousemove', e => {
+    if (!gameActive) return;
+    basketX = clampX(e.clientX);
+    basketEl.style.left = basketX + 'px';
+  });
+  document.addEventListener('touchmove', e => {
+    e.preventDefault();
+    if (!gameActive) return;
+    basketX = clampX(e.touches[0].clientX);
+    basketEl.style.left = basketX + 'px';
+  }, { passive: false });
+
+  // ================================================================
+  //  ゲームフロー
+  // ================================================================
+  function startGame() {
+    score = 0; lives = MAX_LIVES; timeLeft = TOTAL_SEC; gameActive = true;
+    activeFruits = [];
+    document.getElementById('score').textContent   = '0';
+    document.getElementById('timer').textContent   = TOTAL_SEC;
+    document.getElementById('lives-chip').textContent = '❤️'.repeat(MAX_LIVES);
+    document.getElementById('ov-start').classList.add('hidden');
+    document.getElementById('ov-result').classList.add('hidden');
+    document.getElementById('field').innerHTML = '';
+
+    basketX = window.innerWidth / 2;
+    basketEl.style.left   = basketX + 'px';
+    basketEl.style.bottom = basketBottom() + 'px';
+
+    clockTimer = setInterval(tick, 1000);
+    scheduleSpawn();
+    rafId = requestAnimationFrame(gameLoop);
+  }
+
+  function tick() {
+    timeLeft--;
+    document.getElementById('timer').textContent = Math.max(0, timeLeft);
+    if (timeLeft <= 0) endGame('time');
+  }
+
+  function endGame(reason) {
+    if (!gameActive) return;
+    gameActive = false;
+    clearInterval(clockTimer);
+    clearTimeout(spawnTimer);
+    cancelAnimationFrame(rafId);
+
+    const emoji = score >= 20 ? '🏆' : score >= 12 ? '🎉' : score >= 6 ? '😄' : '🌱';
+    const title = score >= 20 ? 'かんぺき！' : score >= 12 ? 'すごい！' : score >= 6 ? 'よくできました！' : 'がんばったね！';
+    document.getElementById('result-emoji').textContent = emoji;
+    document.getElementById('result-title').textContent = title;
+    document.getElementById('final-score').textContent  = score;
+    document.getElementById('ov-result').classList.remove('hidden');
+  }
+
+  // ================================================================
+  //  ゲームループ（rAF）
+  // ================================================================
+  function gameLoop() {
+    if (!gameActive) return;
+
+    const catchLineY = basketYTop() + 12; // キャッチ判定ライン
+
+    activeFruits = activeFruits.filter(f => {
+      if (f.done) return false;
+      f.y += f.speed;
+      f.el.style.top = f.y + 'px';
+
+      if (f.y + 40 >= catchLineY) {
+        const dist = Math.abs(f.x - basketX);
+        if (dist < BASKET_W) {
+          catchFruit(f);
+        } else if (f.y > window.innerHeight) {
+          missFruit(f);
+        } else {
+          return true;
+        }
+        return false;
+      }
+      return true;
+    });
+
+    rafId = requestAnimationFrame(gameLoop);
+  }
+
+  function catchFruit(f) {
+    if (f.done) return; f.done = true;
+    f.el.classList.add('catch-anim');
+    playCatch();
+    score++;
+    document.getElementById('score').textContent = score;
+    showCatchFX(f.x, f.y);
+    setTimeout(() => f.el.remove(), 380);
+  }
+
+  function missFruit(f) {
+    if (f.done) return; f.done = true;
+    f.el.classList.add('miss-anim');
+    playMiss();
+    lives--;
+    updateLivesChip();
+    showLifeLostFX();
+    setTimeout(() => f.el.remove(), 420);
+    if (lives <= 0) setTimeout(() => endGame('lives'), 350);
+  }
+
+  function updateLivesChip() {
+    document.getElementById('lives-chip').textContent =
+      '❤️'.repeat(Math.max(0, lives)) + '🖤'.repeat(Math.max(0, MAX_LIVES - lives));
+  }
+
+  function showCatchFX(x, y) {
+    const icons = ['✨','⭐','💫','🌟'];
+    const el = document.createElement('div');
+    el.className = 'catch-fx';
+    el.textContent = icons[Math.floor(Math.random() * icons.length)];
+    el.style.left = x + 'px'; el.style.top = y + 'px';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 750);
+  }
+
+  function showLifeLostFX() {
+    const el = document.createElement('div');
+    el.className = 'life-lost-fx';
+    el.textContent = '💔';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 750);
+  }
+
+  // ================================================================
+  //  くだものスポーン
+  // ================================================================
+  function scheduleSpawn() {
+    if (!gameActive) return;
+    const elapsed  = TOTAL_SEC - timeLeft;
+    const interval = Math.max(500, 1800 - elapsed * 28);
+    spawnTimer = setTimeout(() => { spawnFruit(); scheduleSpawn(); }, interval);
+  }
+
+  function spawnFruit() {
+    if (!gameActive) return;
+    const emoji = FRUITS[Math.floor(Math.random() * FRUITS.length)];
+    const x     = 40 + Math.random() * (window.innerWidth - 80);
+    const speed = 2.2 + Math.random() * 1.8 + (TOTAL_SEC - timeLeft) * 0.06;
+
+    const el = document.createElement('div');
+    el.className = 'fruit';
+    el.textContent = emoji;
+    el.style.left = x + 'px';
+    el.style.top  = '-60px';
+    document.getElementById('field').appendChild(el);
+
+    activeFruits.push({ el, x, y: -60, speed, done: false });
+  }
+
+  // ================================================================
+  //  初期化
+  // ================================================================
+  document.getElementById('btn-start').addEventListener('click', () => { initAudio(); startGame(); });
+  document.getElementById('btn-retry').addEventListener('click', () => { initAudio(); startGame(); });
+</script>
+</body>
+</html>

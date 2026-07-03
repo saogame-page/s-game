@@ -1,0 +1,7 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# 透かし入りの素材（右下に薄い透かしが残っている。透かしなし版に差し替わるまで除外）
+assets/raw-assets/animals/inu-real.png
+assets/raw-assets/animals/neko-real.png

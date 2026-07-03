@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🐟 さかなをつかまえよう</title>
+  <link href="https://fonts.googleapis.com/css2?family=Kosugi+Maru&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      height: 100dvh; overflow: hidden;
+      font-family: 'Kosugi Maru', sans-serif;
+    }
+
+    /* ── 海の背景 ── */
+    .ocean {
+      position: fixed; inset: 0;
+      background: linear-gradient(180deg,
+        #0ea5e9 0%, #0284c7 15%,
+        #0369a1 35%, #075985 55%,
+        #0c4a6e 75%, #082f49 100%);
+    }
+
+    /* 光の筋 */
+    .light-ray {
+      position: fixed; top: 0;
+      width: 60px; height: 55%;
+      background: linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 100%);
+      transform-origin: top center;
+      pointer-events: none;
+    }
+
+    /* 波 */
+    .wave {
+      position: fixed; top: 0; left: -5%; right: -5%; height: 60px;
+      background: linear-gradient(180deg, #38bdf8 0%, rgba(56,189,248,0) 100%);
+      border-radius: 0 0 60% 60%;
+      animation: wave-move 3.5s ease-in-out infinite;
+    }
+    @keyframes wave-move {
+      0%,100% { transform: translateY(-6px) scaleX(1.02); }
+      50%      { transform: translateY(6px)  scaleX(0.98); }
+    }
+
+    /* 海底 */
+    .seabed {
+      position: fixed; bottom: 0; left: 0; right: 0; height: 16%;
+      background: linear-gradient(180deg, #78350f 0%, #451a03 100%);
+      border-radius: 40% 40% 0 0 / 30px 30px 0 0;
+    }
+    .seabed::before {
+      content: ''; position: absolute; top: -12px; left: 0; right: 0; height: 20px;
+      background: radial-gradient(ellipse at 50% 100%, #92400e 0%, #78350f 100%);
+      border-radius: 50%;
+    }
+
+    /* 海草・珊瑚 */
+    .deco {
+      position: fixed; bottom: 12%; pointer-events: none;
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      animation: sway var(--dur) ease-in-out var(--delay) infinite;
+    }
+    @keyframes sway {
+      0%,100% { transform: rotate(-8deg) translateX(0); }
+      50%      { transform: rotate(8deg) translateX(4px); }
+    }
+
+    /* 泡 */
+    .bubble-bg {
+      position: fixed; pointer-events: none;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.22);
+      border: 1px solid rgba(255,255,255,0.35);
+      animation: bubble-rise var(--dur) linear var(--delay) infinite;
+    }
+    @keyframes bubble-rise {
+      0%   { transform: translateY(0) translateX(0); opacity: 0.6; }
+      50%  { transform: translateY(calc(var(--dist)*-0.5)) translateX(8px); }
+      100% { transform: translateY(var(--dist)); opacity: 0; }
+    }
+
+    /* ── HUD ── */
+    .hud {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 20;
+      padding: 10px 14px; display: flex;
+      align-items: center; justify-content: space-between;
+    }
+    .chip {
+      background: rgba(255,255,255,0.18);
+      border: 1px solid rgba(255,255,255,0.28);
+      border-radius: 16px; padding: 6px 14px;
+      color: #fff; font-size: 1rem;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.4);
+    }
+    .home-link {
+      background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.22);
+      border-radius: 16px; padding: 6px 14px;
+      color: #ddd; font-size: 0.9rem; text-decoration: none;
+    }
+    #timer.danger { color: #fca5a5; animation: blink 0.5s step-start infinite; }
+    @keyframes blink { 50% { opacity: 0.3; } }
+
+    /* ── 魚 ── */
+    .fish {
+      position: fixed;
+      font-size: var(--size);
+      cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      z-index: 10;
+      /* 向きは JS で scaleX で制御 */
+      transition: filter 0.1s;
+      filter: drop-shadow(0 3px 6px rgba(0,0,0,0.3));
+    }
+    .fish.splash {
+      pointer-events: none;
+      animation: fish-splash 0.4s ease-out forwards !important;
+    }
+    @keyframes fish-splash {
+      0%   { transform: scale(1) scaleX(var(--dir)); }
+      30%  { transform: scale(1.7) scaleX(var(--dir)); opacity: 1; }
+      100% { transform: scale(0)   scaleX(var(--dir)); opacity: 0; }
+    }
+
+    /* スプラッシュ */
+    .splash-fx {
+      position: fixed; pointer-events: none; z-index: 30;
+      font-size: 1.8rem;
+      animation: sfx 0.65s ease-out forwards;
+    }
+    @keyframes sfx {
+      0%   { transform: translate(-50%,-50%) scale(0.3); opacity: 1; }
+      50%  { transform: translate(-50%,-50%) scale(1.3); opacity: 1; }
+      100% { transform: translate(-50%,-50%) scale(0.9); opacity: 0; }
+    }
+
+    /* スコアポップ */
+    .score-pop {
+      position: fixed; pointer-events: none; z-index: 35;
+      color: #fde68a; font-size: 1.5rem; font-weight: bold;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+      animation: spop 0.8s ease-out forwards;
+    }
+    @keyframes spop {
+      0%   { transform: translateX(-50%) scale(0.4); opacity: 1; }
+      50%  { transform: translateX(-50%) translateY(-45px) scale(1.1); opacity: 1; }
+      100% { transform: translateX(-50%) translateY(-70px) scale(0.8); opacity: 0; }
+    }
+
+    /* ── オーバーレイ ── */
+    .overlay {
+      position: fixed; inset: 0; z-index: 50;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(0,30,60,0.55); backdrop-filter: blur(5px);
+    }
+    .overlay.hidden { display: none; }
+    .card {
+      background: #fff; border-radius: 28px;
+      padding: 28px 22px 22px; width: 88%; max-width: 340px;
+      text-align: center; box-shadow: 0 14px 44px rgba(0,0,0,0.25);
+      animation: cin 0.36s cubic-bezier(0.18,1.5,0.5,1);
+    }
+    @keyframes cin { from { transform: scale(0.35); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .card-emoji { font-size: 3rem; }
+    .card-title { font-size: 1.9rem; margin: 6px 0; }
+    .card-score { font-size: 2.4rem; color: #0ea5e9; font-weight: bold; margin: 10px 0 22px; }
+    .card-sub   { font-size: 0.9rem; color: #999; margin-bottom: 4px; }
+    .btn {
+      display: block; width: 100%; padding: 13px; margin-bottom: 10px;
+      border: none; border-radius: 50px;
+      font-family: 'Kosugi Maru', sans-serif; font-size: 1.05rem; font-weight: bold;
+      cursor: pointer; touch-action: manipulation; text-decoration: none; text-align: center;
+    }
+    .btn-blue   { background: linear-gradient(160deg,#38bdf8,#0369a1); color:#fff;
+                  box-shadow: 0 5px 0 #024272; }
+    .btn-blue:active { box-shadow: 0 2px 0 #024272; transform: translateY(3px); }
+    .btn-gray   { background: linear-gradient(160deg,#ccc,#999); color:#fff; box-shadow: 0 5px 0 #666; }
+  </style>
+</head>
+<body>
+<div class="ocean"></div>
+<div class="wave"></div>
+
+<!-- 光の筋 -->
+<div class="light-ray" style="left:18%; transform:rotate(-8deg)"></div>
+<div class="light-ray" style="left:40%; transform:rotate(3deg); width:40px; opacity:0.7"></div>
+<div class="light-ray" style="left:68%; transform:rotate(10deg); width:50px"></div>
+
+<!-- 海草・珊瑚 -->
+<div class="deco" style="left:3%;  --dur:2.8s; --delay:0s">🌿</div>
+<div class="deco" style="left:10%; --dur:3.2s; --delay:-1s; font-size:2rem">🪸</div>
+<div class="deco" style="right:5%; --dur:2.6s; --delay:-0.5s">🌿</div>
+<div class="deco" style="right:13%;--dur:3.5s; --delay:-1.8s; font-size:1.8rem">🪸</div>
+
+<div class="seabed"></div>
+
+<div id="field"></div>
+
+<!-- HUD -->
+<div class="hud">
+  <div class="chip">🐟 さかなつり</div>
+  <div class="chip">🎣 <span id="score">0</span></div>
+  <div class="chip">⏱ <span id="timer">45</span></div>
+  <a class="home-link" href="../../index.html">← もどる</a>
+</div>
+
+<!-- スタート -->
+<div class="overlay" id="ov-start">
+  <div class="card">
+    <div class="card-emoji">🐟🐠🐡</div>
+    <div class="card-title">さかなをつかまえよう</div>
+    <p style="color:#777;font-size:0.95rem;margin:8px 0 18px;line-height:1.7">
+      うみをおよいでいる さかなを<br>タップして つかまえよう！🎣
+    </p>
+    <button class="btn btn-blue" id="btn-start">スタート！🌊</button>
+    <a class="btn btn-gray" href="../../index.html">← トップにもどる</a>
+  </div>
+</div>
+
+<!-- リザルト -->
+<div class="overlay hidden" id="ov-result">
+  <div class="card">
+    <div class="card-emoji" id="r-emoji">🎉</div>
+    <div class="card-title" id="r-title">すごい！</div>
+    <div class="card-sub">つかまえた さかな</div>
+    <div class="card-score">🐟 <span id="r-score">0</span> ひき！</div>
+    <button class="btn btn-blue" id="btn-retry">もういちど！</button>
+    <a class="btn btn-gray" href="../../index.html">← トップにもどる</a>
+  </div>
+</div>
+
+<script>
+  // ============================================================
+  //  魚データ ── 絵文字・大きさ・速さ（の基準）・点数を変えられます
+  // ============================================================
+  const FISH_TYPES = [
+    { emoji:'🐟', size:'2.8rem', speedMult:1.0, pts:1  },
+    { emoji:'🐠', size:'3rem',   speedMult:1.2, pts:1  },
+    { emoji:'🐡', size:'3.4rem', speedMult:0.7, pts:2  },
+    { emoji:'🦐', size:'2rem',   speedMult:1.8, pts:3  },
+    { emoji:'🦑', size:'2.4rem', speedMult:1.4, pts:2  },
+    { emoji:'🦀', size:'2.2rem', speedMult:0.6, pts:2  },
+    { emoji:'🐙', size:'3rem',   speedMult:0.5, pts:3  },
+    { emoji:'🦈', size:'4rem',   speedMult:2.0, pts:5  },
+  ];
+
+  const TOTAL_SEC = 45;
+  let score = 0, timeLeft = TOTAL_SEC, gameActive = false;
+  let activeFish = [], rafId = null, clockTimer = null;
+  let audioCtx = null;
+
+  function initAudio() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  function playSplash(pts) {
+    if (!audioCtx) return;
+    const freqs = pts >= 5 ? [440,554,659,880] : pts >= 3 ? [440,554,659] : [440,523];
+    freqs.forEach((f,i) => {
+      const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+      o.connect(g); g.connect(audioCtx.destination); o.type='sine'; o.frequency.value=f;
+      g.gain.setValueAtTime(0.18, audioCtx.currentTime+i*0.08);
+      g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime+i*0.08+0.2);
+      o.start(audioCtx.currentTime+i*0.08); o.stop(audioCtx.currentTime+i*0.08+0.22);
+    });
+  }
+
+  // ── エフェクト ──
+  function showSplash(x, y) {
+    ['💦','✨','⭐'].forEach((ic,i) => {
+      const el = document.createElement('div');
+      el.className = 'splash-fx'; el.textContent = ic;
+      el.style.cssText = `left:${x+(i-1)*24}px; top:${y-10}px;`;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 680);
+    });
+  }
+  function showScorePop(x, y, pts) {
+    const el = document.createElement('div');
+    el.className = 'score-pop';
+    el.textContent = pts >= 5 ? `🦈 +${pts}!` : `+${pts}⭐`;
+    el.style.cssText = `left:${x}px; top:${y}px;`;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 850);
+  }
+
+  // ── 魚スポーン ──
+  function spawnFish() {
+    if (!gameActive) return;
+    const ft = FISH_TYPES[Math.floor(Math.random() * FISH_TYPES.length)];
+    const goRight = Math.random() < 0.5;
+    const baseSpeed = 0.9 + (TOTAL_SEC - timeLeft) * 0.025;
+    const speed = baseSpeed * ft.speedMult * (goRight ? 1 : -1);
+    const y = 65 + Math.random() * (window.innerHeight * 0.62);
+    const startX = goRight ? -80 : window.innerWidth + 80;
+
+    const el = document.createElement('div');
+    el.className = 'fish';
+    el.textContent = ft.emoji;
+    el.style.setProperty('--size', ft.size);
+    el.style.setProperty('--dir', goRight ? '1' : '-1');
+    el.style.left = startX + 'px';
+    el.style.top  = y + 'px';
+    el.style.transform = goRight ? 'scaleX(1)' : 'scaleX(-1)';
+    document.getElementById('field').appendChild(el);
+
+    const f = { el, x: startX, y, speed, pts: ft.pts, done: false };
+    activeFish.push(f);
+
+    el.addEventListener('pointerdown', e => {
+      e.preventDefault();
+      if (f.done) return;
+      initAudio();
+      f.done = true;
+      el.classList.add('splash');
+      const rect = el.getBoundingClientRect();
+      const cx = rect.left + rect.width/2;
+      const cy = rect.top  + rect.height/2;
+      playSplash(ft.pts);
+      showSplash(cx, cy);
+      showScorePop(cx, cy, ft.pts);
+      score += ft.pts;
+      document.getElementById('score').textContent = score;
+      setTimeout(() => el.remove(), 430);
+    });
+
+    const interval = Math.max(600, 2400 - (TOTAL_SEC - timeLeft) * 40);
+    setTimeout(spawnFish, interval);
+  }
+
+  // ── rAF 移動 ──
+  function gameLoop() {
+    if (!gameActive) return;
+    activeFish = activeFish.filter(f => {
+      if (f.done) return false;
+      f.x += f.speed;
+      f.el.style.left = f.x + 'px';
+      if (f.x > window.innerWidth + 120 || f.x < -120) {
+        f.el.remove(); return false;
+      }
+      return true;
+    });
+    rafId = requestAnimationFrame(gameLoop);
+  }
+
+  // ── ゲームフロー ──
+  function startGame() {
+    score = 0; timeLeft = TOTAL_SEC; gameActive = true; activeFish = [];
+    document.getElementById('score').textContent = '0';
+    document.getElementById('timer').textContent = TOTAL_SEC;
+    document.getElementById('timer').classList.remove('danger');
+    document.getElementById('ov-start').classList.add('hidden');
+    document.getElementById('ov-result').classList.add('hidden');
+    document.getElementById('field').innerHTML = '';
+
+    clockTimer = setInterval(() => {
+      timeLeft--;
+      const t = document.getElementById('timer');
+      t.textContent = Math.max(0, timeLeft);
+      if (timeLeft <= 8) t.classList.add('danger');
+      if (timeLeft <= 0) endGame();
+    }, 1000);
+
+    spawnFish();
+    rafId = requestAnimationFrame(gameLoop);
+  }
+
+  function endGame() {
+    if (!gameActive) return;
+    gameActive = false;
+    clearInterval(clockTimer); cancelAnimationFrame(rafId);
+    document.getElementById('field').innerHTML = '';
+
+    const e = score >= 25 ? '🏆' : score >= 15 ? '🎉' : score >= 7 ? '😄' : '🌊';
+    const t = score >= 25 ? 'つりめいじん！' : score >= 15 ? 'すごい！' : score >= 7 ? 'よくできました！' : 'がんばったね！';
+    document.getElementById('r-emoji').textContent = e;
+    document.getElementById('r-title').textContent = t;
+    document.getElementById('r-score').textContent = score;
+    document.getElementById('ov-result').classList.remove('hidden');
+  }
+
+  // ── 泡（装飾） ──
+  for (let i = 0; i < 14; i++) {
+    const el = document.createElement('div');
+    el.className = 'bubble-bg';
+    const s = 6 + Math.random() * 16;
+    const dist = -(window.innerHeight * 0.5 + Math.random() * 300);
+    el.style.cssText = `
+      width:${s}px; height:${s}px;
+      left:${Math.random()*100}%; bottom:${10+Math.random()*50}%;
+      --dur:${5+Math.random()*8}s; --delay:-${Math.random()*8}s; --dist:${dist}px;
+    `;
+    document.body.appendChild(el);
+  }
+
+  document.getElementById('btn-start').addEventListener('click', () => { initAudio(); startGame(); });
+  document.getElementById('btn-retry').addEventListener('click', () => { initAudio(); startGame(); });
+</script>
+</body>
+</html>

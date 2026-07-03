@@ -1,0 +1,51 @@
+/* どうぶつ3択クイズ — ゲーム固有スタイル */
+
+.game-header {
+  padding: 20px 24px;
+}
+
+.placeholder-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 80px);
+  padding: 20px;
+}
+
+.placeholder-card {
+  background: rgba(255,255,255,0.90);
+  border-radius: 28px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.10);
+  padding: 52px 40px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  max-width: 400px;
+  width: 100%;
+}
+
+.placeholder-emoji {
+  font-size: 5rem;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.12));
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%,100% { transform: translateY(0); }
+  50%      { transform: translateY(-8px); }
+}
+
+.placeholder-title {
+  font-size: 1.7rem;
+  font-weight: bold;
+  color: #ff7f50;
+  letter-spacing: 1px;
+}
+
+.placeholder-msg {
+  font-size: 1.1rem;
+  color: #888;
+  letter-spacing: 1px;
+}

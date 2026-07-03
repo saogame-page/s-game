@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🥁 たいこをたたこう</title>
+  <link href="https://fonts.googleapis.com/css2?family=Kosugi+Maru&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      height: 100dvh; overflow: hidden;
+      font-family: 'Kosugi Maru', sans-serif;
+      background: #1a1030;
+    }
+
+    /* ── 背景ステージ ── */
+    .stage {
+      position: fixed; inset: 0;
+      background:
+        radial-gradient(ellipse 80% 55% at 50% 85%, #3a1860 0%, transparent 70%),
+        linear-gradient(180deg, #110820 0%, #1a1038 50%, #2a1050 100%);
+    }
+    /* カーテン */
+    .curtain-l, .curtain-r {
+      position: fixed; top: 0; bottom: 0; width: 9%;
+      background: linear-gradient(90deg, #5a0820, #8a1030);
+      z-index: 1;
+    }
+    .curtain-l { left: 0; border-radius: 0 0 40px 0; }
+    .curtain-r { right: 0; border-radius: 0 0 0 40px;
+      background: linear-gradient(270deg, #5a0820, #8a1030); }
+
+    /* ── HUD ── */
+    .hud {
+      position: fixed; top: 0; left: 0; right: 0;
+      padding: 10px 14px; display: flex;
+      align-items: center; justify-content: space-between; z-index: 10;
+    }
+    .chip {
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 16px; padding: 5px 14px;
+      color: #fff; font-size: 0.95rem;
+    }
+    .home-link {
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 16px; padding: 5px 14px;
+      color: #ccc; font-size: 0.9rem; text-decoration: none;
+    }
+    #combo-chip { transition: transform 0.15s; }
+    #combo-chip.pop { animation: combo-pop 0.3s ease-out; }
+    @keyframes combo-pop {
+      0%   { transform: scale(1); }
+      40%  { transform: scale(1.4); }
+      100% { transform: scale(1); }
+    }
+
+    /* ── ドラムパッド グリッド ── */
+    .drum-grid {
+      position: fixed; inset: 60px 10% 20px;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      gap: clamp(8px, 2vw, 16px);
+      z-index: 5;
+    }
+
+    .pad {
+      border-radius: 22px;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      position: relative; overflow: hidden;
+      transition: transform 0.08s, box-shadow 0.08s;
+      /* 光沢 */
+      background: var(--bg);
+      box-shadow: 0 8px 0 var(--shadow), 0 10px 28px rgba(0,0,0,0.45),
+                  inset 0 2px 0 rgba(255,255,255,0.25);
+    }
+    .pad::before {
+      content: ''; position: absolute;
+      top: 5px; left: 10%; right: 10%; height: 36%;
+      background: linear-gradient(180deg, rgba(255,255,255,0.38) 0%, transparent 100%);
+      border-radius: 0 0 50% 50%; pointer-events: none;
+    }
+    .pad:active, .pad.hit {
+      transform: translateY(6px);
+      box-shadow: 0 2px 0 var(--shadow), 0 4px 14px rgba(0,0,0,0.5),
+                  inset 0 2px 0 rgba(255,255,255,0.12);
+    }
+    .pad-emoji { font-size: clamp(2.2rem, 7vw, 3.8rem); line-height: 1; pointer-events: none; }
+    .pad-label { font-size: clamp(0.8rem, 2.3vw, 1rem); color: rgba(255,255,255,0.9);
+                 margin-top: 4px; pointer-events: none; }
+
+    /* リップル */
+    .ripple {
+      position: absolute; border-radius: 50%;
+      background: rgba(255,255,255,0.35);
+      transform: scale(0); pointer-events: none;
+      animation: ripple-out 0.45s ease-out forwards;
+    }
+    @keyframes ripple-out {
+      to { transform: scale(4); opacity: 0; }
+    }
+
+    /* 飛び出すエフェクト */
+    .note-fx {
+      position: fixed; pointer-events: none; z-index: 30;
+      font-size: 1.6rem;
+      animation: note-fly 0.8s ease-out forwards;
+    }
+    @keyframes note-fly {
+      0%   { transform: translate(-50%,-50%) scale(0.3) rotate(-10deg); opacity: 1; }
+      60%  { transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) scale(1.2) rotate(6deg); opacity: 1; }
+      100% { transform: translate(calc(-50% + var(--tx)*1.4), calc(-50% + var(--ty)*1.4)) scale(0.5); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+<div class="stage"></div>
+<div class="curtain-l"></div>
+<div class="curtain-r"></div>
+
+<div class="hud">
+  <div class="chip">🥁 たいこをたたこう</div>
+  <div class="chip" id="combo-chip">🎵 <span id="combo">0</span> かい</div>
+  <a class="home-link" href="../../index.html">← もどる</a>
+</div>
+
+<div class="drum-grid" id="drum-grid"></div>
+
+<script>
+  // ============================================================
+  //  パッドデータ ── 色・絵文字・音を自由に変更できます
+  // ============================================================
+  const PADS = [
+    { emoji:'🥁', label:'ドン',     bg:'#e8453c', shadow:'#90150e', freq:80,  type:'triangle', dur:0.45, fx:['🎵','🎶','✨'] },
+    { emoji:'🪘', label:'ドコドコ', bg:'#e87c3c', shadow:'#904010', freq:120, type:'sawtooth', dur:0.3,  fx:['💥','🔥','⭐'] },
+    { emoji:'🔔', label:'チーン',   bg:'#e8c43c', shadow:'#907010', freq:880, type:'sine',     dur:1.1,  fx:['✨','💛','🌟'] },
+    { emoji:'🪗', label:'パッパ',   bg:'#3cb87c', shadow:'#106040', freq:440, type:'square',   dur:0.2,  fx:['🎵','💚','🌈'] },
+    { emoji:'🎷', label:'プァー',   bg:'#3c7ce8', shadow:'#103090', freq:320, type:'sawtooth', dur:0.55, fx:['🎵','💙','✨'] },
+    { emoji:'🎹', label:'ピロロ',   bg:'#a03ce8', shadow:'#500090', freq:660, type:'sine',     dur:0.4,  fx:['🎵','💜','⭐'] },
+  ];
+
+  let tapCount = 0;
+  let audioCtx = null;
+  function initAudio() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+
+  // ── 音合成 ──
+  function playPad(pad) {
+    if (!audioCtx) return;
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.connect(g); g.connect(audioCtx.destination);
+    o.type = pad.type;
+    o.frequency.setValueAtTime(pad.freq, audioCtx.currentTime);
+    if (pad.type === 'sawtooth') {
+      o.frequency.exponentialRampToValueAtTime(pad.freq * 0.5, audioCtx.currentTime + pad.dur);
+    }
+    g.gain.setValueAtTime(0.28, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + pad.dur);
+    o.start(); o.stop(audioCtx.currentTime + pad.dur + 0.05);
+  }
+
+  // ── エフェクト ──
+  function spawnNotes(padEl, icons) {
+    const rect = padEl.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top  + rect.height / 2;
+    for (let i = 0; i < 5; i++) {
+      const el = document.createElement('div');
+      el.className = 'note-fx';
+      el.textContent = icons[i % icons.length];
+      const angle = (Math.PI * 2 * i / 5) - Math.PI / 2;
+      el.style.setProperty('--tx', (Math.cos(angle) * 70) + 'px');
+      el.style.setProperty('--ty', (Math.sin(angle) * 60 - 20) + 'px');
+      el.style.left = cx + 'px'; el.style.top = cy + 'px';
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 900);
+    }
+  }
+
+  function spawnRipple(padEl, e) {
+    const rect = padEl.getBoundingClientRect();
+    const x = (e.clientX ?? rect.left + rect.width/2) - rect.left;
+    const y = (e.clientY ?? rect.top  + rect.height/2) - rect.top;
+    const r = document.createElement('div');
+    r.className = 'ripple';
+    r.style.cssText = `width:60px;height:60px;left:${x-30}px;top:${y-30}px`;
+    padEl.appendChild(r);
+    setTimeout(() => r.remove(), 480);
+  }
+
+  // ── パッド生成 ──
+  const grid = document.getElementById('drum-grid');
+  PADS.forEach(pad => {
+    const el = document.createElement('div');
+    el.className = 'pad';
+    el.style.setProperty('--bg', pad.bg);
+    el.style.setProperty('--shadow', pad.shadow);
+    el.innerHTML = `<div class="pad-emoji">${pad.emoji}</div><div class="pad-label">${pad.label}</div>`;
+
+    el.addEventListener('pointerdown', e => {
+      e.preventDefault();
+      initAudio();
+      playPad(pad);
+      spawnRipple(el, e);
+      spawnNotes(el, pad.fx);
+
+      el.classList.add('hit');
+      setTimeout(() => el.classList.remove('hit'), 150);
+
+      tapCount++;
+      document.getElementById('combo').textContent = tapCount;
+      const chip = document.getElementById('combo-chip');
+      chip.classList.remove('pop');
+      void chip.offsetWidth;
+      chip.classList.add('pop');
+    });
+
+    grid.appendChild(el);
+  });
+</script>
+</body>
+</html>

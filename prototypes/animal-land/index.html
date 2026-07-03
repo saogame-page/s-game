@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🌿 どうぶつランド</title>
+  <link href="https://fonts.googleapis.com/css2?family=Kosugi+Maru&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 100%; height: 100dvh;
+      overflow: hidden;
+      font-family: 'Kosugi Maru', sans-serif;
+      background: #1a7a3c;
+    }
+
+    /* ================================================================
+       背景：森のシーン ── 色変更ポイント
+    ================================================================ */
+    .bg-sky {
+      position: fixed; inset: 0;
+      background: linear-gradient(180deg,
+        #70c8ff 0%,
+        #a8deff 45%,
+        #c0eaff 60%,
+        #c8f0c0 75%,     /* 地平線あたりの緑 */
+        #3ab060 76%,
+        #2a8848 100%);
+    }
+
+    /* 木々シルエット */
+    .trees {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      height: 40%;
+      pointer-events: none;
+    }
+    .tree {
+      position: absolute; bottom: 0;
+      width: 60px; /* 太さ */
+      text-align: center;
+      font-size: 5rem;
+      line-height: 1;
+      filter: drop-shadow(0 4px 6px rgba(0,0,0,0.15));
+    }
+
+    /* 太陽・月 */
+    .sun {
+      position: fixed; top: 28px; right: 32px;
+      font-size: 3.2rem;
+      animation: sun-bob 5s ease-in-out infinite;
+      filter: drop-shadow(0 0 18px rgba(255,210,0,0.65));
+    }
+    @keyframes sun-bob {
+      0%,100% { transform: translateY(0); }
+      50%      { transform: translateY(-8px); }
+    }
+
+    /* 雲 */
+    .cloud {
+      position: fixed; font-size: 2.2rem;
+      opacity: 0.85;
+      animation: cloud-drift var(--dur) linear var(--delay) infinite;
+      top: var(--top);
+    }
+    @keyframes cloud-drift {
+      from { left: -10%; }
+      to   { left: 112%; }
+    }
+
+    /* ================================================================
+       どうぶつカード
+    ================================================================ */
+    .field {
+      position: fixed; inset: 0;
+      display: flex; flex-wrap: wrap;
+      align-items: center; justify-content: center;
+      gap: 12px;
+      padding: 64px 12px 20px;
+    }
+
+    .animal-card {
+      position: relative;
+      width:  clamp(110px, 28vw, 150px);
+      height: clamp(120px, 30vw, 162px);
+      background: rgba(255,255,255,0.92);
+      border-radius: 24px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.16);
+      cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 4px;
+      transition: transform 0.12s;
+      user-select: none;
+      overflow: visible;
+    }
+    .animal-card::before {
+      content: '';
+      position: absolute; top: 3px; left: 14%; right: 14%; height: 36%;
+      background: linear-gradient(180deg, rgba(255,255,255,0.55) 0%, transparent 100%);
+      border-radius: 0 0 50% 50%;
+      pointer-events: none;
+    }
+
+    .animal-emoji  { font-size: clamp(3rem, 9vw, 4.2rem); line-height: 1; }
+    .animal-name   { font-size: clamp(0.85rem, 2.5vw, 1rem); color: #444; font-weight: bold; }
+    .animal-sound  {
+      font-size: 0.8rem; color: #888;
+      background: rgba(0,0,0,0.06);
+      padding: 1px 8px; border-radius: 12px;
+    }
+
+    /* カードタップ状態 */
+    .animal-card.tapped {
+      animation: card-bounce 0.45s cubic-bezier(0.18,1.5,0.5,1);
+      background: rgba(255,250,200,0.97);
+    }
+    @keyframes card-bounce {
+      0%   { transform: scale(1); }
+      30%  { transform: scale(0.88); }
+      60%  { transform: scale(1.18); }
+      80%  { transform: scale(0.96); }
+      100% { transform: scale(1); }
+    }
+
+    /* ================================================================
+       エフェクト
+    ================================================================ */
+    /* ハート・スター */
+    .emoji-fx {
+      position: fixed;
+      font-size: 1.8rem;
+      pointer-events: none; z-index: 40;
+      animation: efx-fly var(--dur, 0.9s) ease-out forwards;
+    }
+    @keyframes efx-fly {
+      0%   { transform: translate(0, 0)   scale(0.4) rotate(-10deg); opacity: 1; }
+      50%  { transform: translate(var(--tx), calc(var(--ty)*0.4)) scale(1.2) rotate(6deg); opacity: 1; }
+      100% { transform: translate(var(--tx), var(--ty))  scale(0.6) rotate(12deg); opacity: 0; }
+    }
+
+    /* セリフバブル */
+    .speech {
+      position: fixed;
+      background: #fff;
+      border-radius: 18px;
+      padding: 8px 14px;
+      font-size: clamp(1rem, 3.5vw, 1.3rem);
+      font-weight: bold;
+      color: #333;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.2);
+      pointer-events: none; z-index: 41;
+      white-space: nowrap;
+      animation: speech-pop 1.4s ease-out forwards;
+    }
+    .speech::after {
+      content: '';
+      position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%);
+      border: 10px solid transparent; border-top-color: #fff; border-bottom: 0;
+    }
+    @keyframes speech-pop {
+      0%   { transform: translateX(-50%) scale(0.3); opacity: 0; }
+      12%  { transform: translateX(-50%) scale(1.2); opacity: 1; }
+      20%  { transform: translateX(-50%) scale(1);   opacity: 1; }
+      75%  { transform: translateX(-50%) scale(1);   opacity: 1; }
+      100% { transform: translateX(-50%) scale(0.8); opacity: 0; }
+    }
+
+    /* ================================================================
+       トップHUD
+    ================================================================ */
+    .hud {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 20;
+      padding: 10px 14px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .title-chip {
+      background: rgba(255,255,255,0.88);
+      border-radius: 16px; padding: 5px 14px;
+      font-size: 1rem; font-weight: bold; color: #2a7030;
+    }
+    .home-link {
+      background: rgba(255,255,255,0.88);
+      border-radius: 16px; padding: 5px 14px;
+      font-size: 0.9rem; color: #555; text-decoration: none;
+      font-weight: bold;
+    }
+
+    /* タップカウンター */
+    .tap-counter {
+      position: fixed; bottom: 18px; left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255,255,255,0.85);
+      border-radius: 20px; padding: 6px 20px;
+      font-size: 0.95rem; color: #555; z-index: 20;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    }
+    .tap-counter b { color: #e67e22; }
+  </style>
+</head>
+<body>
+
+<div class="bg-sky"></div>
+
+<!-- 木々 ── 絵文字を変えると雰囲気が変わります -->
+<div class="trees">
+  <div class="tree" style="left:2%; font-size:6rem">🌲</div>
+  <div class="tree" style="left:10%">🌳</div>
+  <div class="tree" style="left:18%; font-size:4.5rem">🌿</div>
+  <div class="tree" style="right:2%; font-size:5.5rem">🌲</div>
+  <div class="tree" style="right:11%">🌳</div>
+  <div class="tree" style="right:20%; font-size:4rem">🌿</div>
+</div>
+
+<!-- 雲 -->
+<div class="cloud" style="--dur:22s; --delay:0s;    --top:8%">☁️</div>
+<div class="cloud" style="--dur:30s; --delay:-12s;  --top:5%; font-size:1.5rem">☁️</div>
+<div class="cloud" style="--dur:18s; --delay:-6s;   --top:13%; font-size:1.6rem">☁️</div>
+
+<!-- 太陽 -->
+<div class="sun">☀️</div>
+
+<!-- HUD -->
+<div class="hud">
+  <div class="title-chip">🌿 どうぶつランド</div>
+  <a class="home-link" href="../../index.html">← もどる</a>
+</div>
+
+<!-- どうぶつカード -->
+<div class="field" id="field"></div>
+
+<!-- タップカウンター -->
+<div class="tap-counter">あそんだ回数：<b id="tap-count">0</b> かい</div>
+
+<script>
+  // ============================================================
+  //  どうぶつデータ ── 増やしたり差し替えたりしてください
+  //  sounds: 鳴き声テキスト / fx: タップ時に飛ぶ絵文字
+  //  pitch: 鳴き声音のピッチ (Hz)、cardBg: カードの背景色 (hover時)
+  // ============================================================
+  const ANIMALS = [
+    { emoji:'🐶', name:'いぬ',     sound:'ワンワン！', fx:['🐾','❤️','✨'], pitch:440,  cardBg:'#fff5d0' },
+    { emoji:'🐱', name:'ねこ',     sound:'ニャーン♪',  fx:['🐾','💛','✨'], pitch:600,  cardBg:'#fff0f5' },
+    { emoji:'🐰', name:'うさぎ',   sound:'ピョン！',   fx:['🌸','💕','⭐'], pitch:700,  cardBg:'#f5e8ff' },
+    { emoji:'🐻', name:'くま',     sound:'グルル…',   fx:['🍯','🌟','💫'], pitch:200,  cardBg:'#fff3e0' },
+    { emoji:'🐸', name:'かえる',   sound:'ケロケロ！', fx:['💚','🌿','✨'], pitch:320,  cardBg:'#e8ffec' },
+    { emoji:'🐧', name:'ペンギン', sound:'クワッ！',   fx:['❄️','🐟','⭐'], pitch:500,  cardBg:'#e8f4ff' },
+  ];
+
+  let tapCount = 0;
+  let audioCtx = null;
+
+  function initAudio() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+
+  // ============================================================
+  //  🔊 鳴き声音合成 ── 実音声で差し替えるならここを変更
+  // ============================================================
+  function playAnimalSound(pitch) {
+    if (!audioCtx) return;
+    const freqs = [pitch, pitch * 1.05, pitch * 0.96];
+    freqs.forEach((f, i) => {
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.connect(g); g.connect(audioCtx.destination);
+      o.type = i === 0 ? 'sine' : 'triangle';
+      o.frequency.setValueAtTime(f, audioCtx.currentTime + i * 0.06);
+      o.frequency.exponentialRampToValueAtTime(f * 0.85, audioCtx.currentTime + i * 0.06 + 0.28);
+      g.gain.setValueAtTime(0.18, audioCtx.currentTime + i * 0.06);
+      g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + i * 0.06 + 0.3);
+      o.start(audioCtx.currentTime + i * 0.06);
+      o.stop(audioCtx.currentTime + i * 0.06 + 0.32);
+    });
+  }
+
+  // ============================================================
+  //  エフェクト
+  // ============================================================
+  function spawnFX(cardEl, fxIcons) {
+    const rect = cardEl.getBoundingClientRect();
+    const cx = rect.left + rect.width  / 2;
+    const cy = rect.top  + rect.height / 2;
+
+    const count = 6;
+    for (let i = 0; i < count; i++) {
+      const el = document.createElement('div');
+      el.className = 'emoji-fx';
+      el.textContent = fxIcons[i % fxIcons.length];
+      const angle = (Math.PI * 2 * i / count) - Math.PI / 2;
+      const dist  = 60 + Math.random() * 50;
+      const tx    = Math.cos(angle) * dist;
+      const ty    = Math.sin(angle) * dist - 30;
+      el.style.setProperty('--tx', tx + 'px');
+      el.style.setProperty('--ty', ty + 'px');
+      el.style.setProperty('--dur', (0.8 + Math.random() * 0.25) + 's');
+      el.style.left = cx + 'px';
+      el.style.top  = cy + 'px';
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 1200);
+    }
+  }
+
+  function spawnSpeech(cardEl, text) {
+    const rect = cardEl.getBoundingClientRect();
+    const el = document.createElement('div');
+    el.className = 'speech';
+    el.textContent = text;
+    el.style.left = (rect.left + rect.width / 2) + 'px';
+    el.style.top  = Math.max(8, rect.top - 60) + 'px';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 1450);
+  }
+
+  // ============================================================
+  //  カードをタップ
+  // ============================================================
+  function onTap(cardEl, animal) {
+    initAudio();
+    playAnimalSound(animal.pitch);
+
+    // bounce
+    cardEl.classList.remove('tapped');
+    void cardEl.offsetWidth;
+    cardEl.classList.add('tapped');
+    cardEl.style.background = animal.cardBg;
+    setTimeout(() => {
+      cardEl.classList.remove('tapped');
+      cardEl.style.background = '';
+    }, 500);
+
+    spawnFX(cardEl, animal.fx);
+    spawnSpeech(cardEl, animal.sound);
+
+    tapCount++;
+    document.getElementById('tap-count').textContent = tapCount;
+  }
+
+  // ============================================================
+  //  カード生成
+  // ============================================================
+  const field = document.getElementById('field');
+  ANIMALS.forEach(animal => {
+    const card = document.createElement('div');
+    card.className = 'animal-card';
+    card.innerHTML = `
+      <div class="animal-emoji">${animal.emoji}</div>
+      <div class="animal-name">${animal.name}</div>
+      <div class="animal-sound">${animal.sound}</div>
+    `;
+
+    card.addEventListener('pointerdown', e => {
+      e.preventDefault();
+      onTap(card, animal);
+    });
+
+    field.appendChild(card);
+  });
+</script>
+</body>
+</html>

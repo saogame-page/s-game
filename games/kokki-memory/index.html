@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>国旗神経衰弱</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Kosugi+Maru&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Kosugi Maru', sans-serif;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 14px 12px 28px;
+      background: linear-gradient(160deg, #b8e4ff 0%, #d4f0c8 48%, #ffe8b0 100%);
+      background-attachment: fixed;
+    }
+
+    /* ================================================================
+       タイトル
+    ================================================================ */
+    h1 {
+      font-size: clamp(1.3rem, 5.5vw, 2rem);
+      color: #fff;
+      text-shadow: 2px 3px 0 rgba(0,80,100,0.22);
+      letter-spacing: 2px;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+
+    /* ================================================================
+       HUD行（タイマー＋やめるボタン）
+    ================================================================ */
+    .hud-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .hud {
+      background: rgba(255,255,255,0.88);
+      border-radius: 20px;
+      padding: 7px 22px;
+      font-size: 1rem;
+      color: #666;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    }
+    #hud-time {
+      color: #e67e22;
+      font-weight: bold;
+      font-size: 1.25rem;
+    }
+
+    /* やめるボタン */
+    .btn-quit {
+      padding: 6px 16px;
+      border: none;
+      border-radius: 50px;
+      font-family: 'Kosugi Maru', sans-serif;
+      font-size: 0.82rem;
+      font-weight: bold;
+      cursor: pointer;
+      background: linear-gradient(170deg, #ff9f9f, #e05555);
+      color: #fff;
+      box-shadow: 0 3px 0 #a02020, 0 4px 10px rgba(0,0,0,0.14);
+      transition: transform 0.1s, box-shadow 0.1s;
+      white-space: nowrap;
+      touch-action: manipulation;
+    }
+    .btn-quit:active {
+      transform: translateY(3px);
+      box-shadow: 0 0 0 #a02020;
+      transition-duration: 0.06s;
+    }
+
+    /* ================================================================
+       ボード（カードグリッド）
+    ================================================================ */
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: clamp(8px, 2.5vw, 14px);
+      width: 100%;
+      max-width: 420px;
+    }
+
+    /* ================================================================
+       カード
+    ================================================================ */
+    .card {
+      aspect-ratio: 3 / 4;
+      cursor: pointer;
+      perspective: 700px;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+
+    /* ── ホバー・アクティブ（めくられていない時のみ） ── */
+    .card:not(.flipped):not(.matched):hover .card-inner {
+      transform: scale(1.05);
+    }
+    .card:not(.flipped):not(.matched):active .card-inner {
+      transform: scale(0.94);
+      transition-duration: 0.07s;
+    }
+
+    /* ── 3D フリップ本体 ── */
+    .card-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transform-style: preserve-3d;
+      transition: transform 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .card.flipped .card-inner,
+    .card.matched .card-inner {
+      transform: rotateY(180deg);
+    }
+
+    .card-face {
+      position: absolute;
+      inset: 0;
+      border-radius: 16px;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.18), 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    /* ── 裏面 ── */
+    .card-back {
+      background: linear-gradient(145deg, #667eea 0%, #764ba2 100%);
+      font-size: clamp(1.8rem, 8vw, 2.8rem);
+      color: rgba(255,255,255,0.9);
+      letter-spacing: 0;
+      gap: 4px;
+      overflow: hidden;
+    }
+    /* 裏面の光沢 */
+    .card-back::before {
+      content: '';
+      position: absolute;
+      top: 5px; left: 10%; right: 10%;
+      height: 44%;
+      background: linear-gradient(180deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0) 100%);
+      border-radius: 0 0 50% 50%;
+      pointer-events: none;
+    }
+    .card-back-star {
+      font-size: clamp(1.6rem, 7vw, 2.4rem);
+      opacity: 0.8;
+    }
+    .card-back-label {
+      font-size: clamp(0.55rem, 2.2vw, 0.75rem);
+      color: rgba(255,255,255,0.75);
+      letter-spacing: 1px;
+    }
+
+    /* ── 表面 ── */
+    .card-front {
+      transform: rotateY(180deg);
+      background: #fff;
+      gap: 5px;
+      padding: 8px 6px 6px;
+      justify-content: flex-start;
+    }
+
+    .card-flag-img {
+      width: 88%;
+      aspect-ratio: 4 / 3;
+      object-fit: cover;
+      border-radius: 7px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+      border: 1px solid rgba(0,0,0,0.07);
+      flex-shrink: 0;
+      margin-top: 4px;
+    }
+
+    .card-name {
+      font-size: clamp(0.68rem, 3vw, 0.95rem);
+      color: #333;
+      text-align: center;
+      line-height: 1.2;
+      word-break: keep-all;
+      margin-top: 2px;
+    }
+
+    .card-ruby {
+      font-size: clamp(0.55rem, 2.2vw, 0.75rem);
+      color: #999;
+      text-align: center;
+    }
+
+    /* ── マッチしたカード：光る ── */
+    .card.matched .card-face {
+      box-shadow: 0 0 0 3px #f9ca24, 0 4px 20px rgba(249,202,36,0.5);
+    }
+    .card.matched .card-front {
+      background: linear-gradient(160deg, #fffde7 0%, #fff9c4 100%);
+    }
+    @keyframes card-matched-glow {
+      0%   { box-shadow: 0 0 0 5px #f9ca24, 0 0 30px rgba(249,202,36,0.9); }
+      100% { box-shadow: 0 0 0 3px #f9ca24, 0 4px 20px rgba(249,202,36,0.5); }
+    }
+    .card.matched .card-inner {
+      animation: card-matched-glow 0.8s ease-out;
+    }
+
+    /* ================================================================
+       やめる確認モーダル
+    ================================================================ */
+    #quit-screen {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.42);
+      z-index: 110;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    #quit-screen.show { display: flex; }
+
+    .quit-box {
+      background: #fff;
+      border-radius: 24px;
+      padding: 28px 24px 22px;
+      width: 100%;
+      max-width: 300px;
+      text-align: center;
+      box-shadow: 0 12px 36px rgba(0,0,0,0.24);
+      animation: box-pop 0.35s cubic-bezier(0.18, 1.5, 0.5, 1);
+    }
+    .quit-title {
+      font-size: 1.4rem;
+      color: #333;
+      margin-bottom: 6px;
+    }
+    .quit-sub {
+      font-size: 0.88rem;
+      color: #999;
+      margin-bottom: 20px;
+    }
+
+    /* ================================================================
+       クリア画面（モーダル）
+    ================================================================ */
+    #clear-screen {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.42);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    #clear-screen.show { display: flex; }
+
+    .clear-box {
+      background: #fff;
+      border-radius: 28px;
+      padding: 28px 22px 24px;
+      width: 100%;
+      max-width: 380px;
+      text-align: center;
+      box-shadow: 0 14px 44px rgba(0,0,0,0.26);
+      animation: box-pop 0.42s cubic-bezier(0.18, 1.5, 0.5, 1);
+      max-height: 92dvh;
+      overflow-y: auto;
+    }
+    @keyframes box-pop {
+      0%   { transform: scale(0.4); opacity: 0; }
+      100% { transform: scale(1);   opacity: 1; }
+    }
+
+    .clear-title {
+      font-size: 2.8rem;
+      margin-bottom: 4px;
+    }
+    .clear-subtitle {
+      font-size: 1rem;
+      color: #888;
+      margin-bottom: 4px;
+    }
+    .clear-time {
+      font-size: 1.05rem;
+      color: #666;
+      margin-bottom: 18px;
+    }
+    .clear-time strong {
+      color: #e67e22;
+      font-size: 1.6rem;
+    }
+
+    /* 覚えた国 */
+    .learned-section {
+      border-top: 2px dashed #eee;
+      padding-top: 14px;
+      margin-bottom: 18px;
+    }
+    .learned-title {
+      font-size: 0.95rem;
+      color: #888;
+      margin-bottom: 10px;
+    }
+    .learned-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    .learned-item {
+      background: #f8f9fa;
+      border-radius: 14px;
+      padding: 8px 4px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+    }
+    .learned-flag-img {
+      width: 56px;
+      aspect-ratio: 4 / 3;
+      object-fit: cover;
+      border-radius: 5px;
+      box-shadow: 0 1px 5px rgba(0,0,0,0.15);
+      border: 1px solid rgba(0,0,0,0.06);
+    }
+    .learned-name { font-size: 0.7rem; color: #444; text-align: center; line-height: 1.2; }
+    .learned-ruby { font-size: 0.6rem; color: #aaa; }
+
+    /* ================================================================
+       ボタン
+    ================================================================ */
+    .btn-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .game-btn {
+      display: block;
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 50px;
+      font-family: 'Kosugi Maru', sans-serif;
+      font-size: 1.1rem;
+      font-weight: bold;
+      cursor: pointer;
+      text-decoration: none;
+      text-align: center;
+      transition: transform 0.12s, box-shadow 0.12s;
+      position: relative;
+      overflow: hidden;
+      touch-action: manipulation;
+    }
+    .game-btn::before {
+      content: '';
+      position: absolute;
+      top: 4px; left: 10%; right: 10%;
+      height: 44%;
+      background: linear-gradient(180deg, rgba(255,255,255,0.72) 0%, rgba(255,255,255,0) 100%);
+      border-radius: 0 0 50% 50%;
+      pointer-events: none;
+    }
+    .game-btn:active {
+      transform: scaleX(1.03) scaleY(0.88) translateY(5px);
+      transition-duration: 0.07s;
+    }
+    .btn-green {
+      background: linear-gradient(170deg, #6fcf60, #3da82e);
+      color: #fff;
+      box-shadow: 0 5px 0 #2a7820, 0 7px 16px rgba(0,0,0,0.16);
+    }
+    .btn-gray {
+      background: linear-gradient(170deg, #d0d0d0, #a0a0a0);
+      color: #fff;
+      box-shadow: 0 5px 0 #707070, 0 7px 16px rgba(0,0,0,0.12);
+    }
+
+    /* ================================================================
+       紙吹雪
+    ================================================================ */
+    .confetti-piece {
+      position: fixed;
+      top: -14px;
+      border-radius: 3px;
+      z-index: 200;
+      pointer-events: none;
+      animation: confetti-fall var(--dur) ease-in var(--delay) forwards;
+    }
+    @keyframes confetti-fall {
+      0%   { transform: translate(0, 0) rotate(0deg) scale(1); opacity: 1; }
+      80%  { opacity: 1; }
+      100% { transform: translate(var(--tx), 108vh) rotate(var(--rot)) scale(0.8); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🌍 国旗神経衰弱</h1>
+
+  <div class="hud-row">
+    <div class="hud">⏱ <span id="hud-time">0</span> びょう</div>
+    <button class="btn-quit" onclick="showQuit()">やめる</button>
+  </div>
+
+  <div class="board" id="board"></div>
+
+  <!-- やめる確認モーダル -->
+  <div id="quit-screen">
+    <div class="quit-box">
+      <div class="quit-title">😢 やめますか？</div>
+      <div class="quit-sub">とちゅうでやめてもいいよ</div>
+      <div class="btn-group">
+        <button class="game-btn btn-green" onclick="closeQuit()">つづける</button>
+        <button class="game-btn btn-gray" onclick="initGame(); closeQuit()">はじめから</button>
+        <a class="game-btn btn-gray" href="../../index.html">トップにもどる</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- クリア画面 -->
+  <div id="clear-screen">
+    <div class="clear-box">
+      <div class="clear-title">🎉 クリア！</div>
+      <div class="clear-subtitle">すごい！ぜんぶ そろえたね！</div>
+      <div class="clear-time">
+        <strong id="clear-sec">0</strong> びょうでクリア！
+      </div>
+
+      <div class="learned-section">
+        <div class="learned-title">✨ 今回おぼえた国</div>
+        <div class="learned-grid" id="learned-grid"></div>
+      </div>
+
+      <div class="btn-group">
+        <button class="game-btn btn-green" onclick="initGame()">もういちどあそぶ</button>
+        <a class="game-btn btn-gray" href="../../index.html">トップにもどる</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ============================================================
+    //  国データ
+    // ============================================================
+    const FLAG_CDN = 'https://flagcdn.com/w160/';
+
+    const COUNTRIES = [
+      { code: 'jp', emoji: '🇯🇵', name: '日本',           ruby: 'にほん' },
+      { code: 'us', emoji: '🇺🇸', name: 'アメリカ',       ruby: '' },
+      { code: 'fr', emoji: '🇫🇷', name: 'フランス',       ruby: '' },
+      { code: 'kr', emoji: '🇰🇷', name: '韓国',           ruby: 'かんこく' },
+      { code: 'au', emoji: '🇦🇺', name: 'オーストラリア', ruby: '' },
+      { code: 'br', emoji: '🇧🇷', name: 'ブラジル',       ruby: '' },
+    ];
+
+    // ============================================================
+    //  状態
+    // ============================================================
+    let flipped    = [];
+    let matchedCnt = 0;
+    let locked     = false;
+    let startTime  = null;
+    let pausedAt   = null;
+    let clockTimer = null;
+
+    // ============================================================
+    //  ユーティリティ
+    // ============================================================
+    function shuffle(arr) {
+      const a = [...arr];
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    // ============================================================
+    //  ゲーム初期化
+    // ============================================================
+    function initGame() {
+      flipped    = [];
+      matchedCnt = 0;
+      locked     = false;
+      startTime  = null;
+      pausedAt   = null;
+      clearInterval(clockTimer);
+      document.getElementById('hud-time').textContent = '0';
+      document.getElementById('clear-screen').classList.remove('show');
+      document.getElementById('quit-screen').classList.remove('show');
+
+      const deck = shuffle([...COUNTRIES, ...COUNTRIES]);
+      const board = document.getElementById('board');
+      board.innerHTML = '';
+
+      deck.forEach(country => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.dataset.id = country.emoji;
+
+        const rubyHtml = country.ruby
+          ? `<div class="card-ruby">（${country.ruby}）</div>` : '';
+
+        card.innerHTML = `
+          <div class="card-inner">
+            <div class="card-face card-back">
+              <div class="card-back-star">🌟</div>
+              <div class="card-back-label">こっき</div>
+            </div>
+            <div class="card-face card-front">
+              <img class="card-flag-img"
+                   src="${FLAG_CDN}${country.code}.png"
+                   alt="${country.name}"
+                   onerror="this.style.display='none'">
+              <div class="card-name">${country.name}</div>
+              ${rubyHtml}
+            </div>
+          </div>`;
+
+        card.addEventListener('click', () => onCardClick(card));
+        board.appendChild(card);
+      });
+
+      document.getElementById('learned-grid').innerHTML = COUNTRIES.map(c => `
+        <div class="learned-item">
+          <img class="learned-flag-img"
+               src="${FLAG_CDN}${c.code}.png"
+               alt="${c.name}"
+               onerror="this.style.display='none'">
+          <div class="learned-name">${c.name}</div>
+          ${c.ruby ? `<div class="learned-ruby">（${c.ruby}）</div>` : ''}
+        </div>`).join('');
+    }
+
+    // ============================================================
+    //  カードクリック
+    // ============================================================
+    function onCardClick(card) {
+      if (locked) return;
+      if (card.classList.contains('flipped'))  return;
+      if (card.classList.contains('matched'))  return;
+
+      if (!startTime) {
+        startTime = Date.now();
+        clockTimer = setInterval(() => {
+          document.getElementById('hud-time').textContent =
+            Math.floor((Date.now() - startTime) / 1000);
+        }, 250);
+      }
+
+      card.classList.add('flipped');
+      flipped.push(card);
+
+      if (flipped.length === 2) {
+        locked = true;
+        checkMatch();
+      }
+    }
+
+    // ============================================================
+    //  マッチ判定
+    // ============================================================
+    function checkMatch() {
+      const [a, b] = flipped;
+
+      if (a.dataset.id === b.dataset.id) {
+        setTimeout(() => {
+          a.classList.add('matched');
+          b.classList.add('matched');
+          flipped = [];
+          locked  = false;
+          matchedCnt++;
+          if (matchedCnt === COUNTRIES.length) onClear();
+        }, 350);
+      } else {
+        setTimeout(() => {
+          a.classList.remove('flipped');
+          b.classList.remove('flipped');
+          flipped = [];
+          locked  = false;
+        }, 900);
+      }
+    }
+
+    // ============================================================
+    //  クリア
+    // ============================================================
+    function onClear() {
+      clearInterval(clockTimer);
+      const sec = Math.floor((Date.now() - startTime) / 1000);
+      document.getElementById('clear-sec').textContent = sec;
+      document.getElementById('clear-screen').classList.add('show');
+      launchConfetti();
+    }
+
+    // ============================================================
+    //  紙吹雪
+    // ============================================================
+    function launchConfetti() {
+      const COLORS = [
+        '#ff6b6b','#ffd93d','#6bcb77','#4d96ff',
+        '#c77dff','#ff922b','#f06595','#74c0fc'
+      ];
+      for (let i = 0; i < 70; i++) {
+        const el = document.createElement('div');
+        el.className = 'confetti-piece';
+        const w = 6 + Math.random() * 7;
+        const h = 8 + Math.random() * 9;
+        el.style.cssText = `
+          left: ${Math.random() * 100}vw;
+          width: ${w}px;
+          height: ${h}px;
+          background: ${COLORS[Math.floor(Math.random() * COLORS.length)]};
+          --dur:   ${1.4 + Math.random() * 1.4}s;
+          --delay: ${Math.random() * 0.9}s;
+          --tx:    ${(Math.random() - 0.5) * 130}px;
+          --rot:   ${Math.floor(Math.random() * 720 - 360)}deg;
+        `;
+        document.body.appendChild(el);
+        el.addEventListener('animationend', () => el.remove());
+      }
+    }
+
+    // ============================================================
+    //  やめる確認モーダル
+    // ============================================================
+    function showQuit() {
+      clearInterval(clockTimer);
+      locked   = true;
+      pausedAt = Date.now();
+      document.getElementById('quit-screen').classList.add('show');
+    }
+    function closeQuit() {
+      document.getElementById('quit-screen').classList.remove('show');
+      locked = false;
+      if (startTime && pausedAt) {
+        startTime += Date.now() - pausedAt;
+        pausedAt = null;
+        clockTimer = setInterval(() => {
+          document.getElementById('hud-time').textContent =
+            Math.floor((Date.now() - startTime) / 1000);
+        }, 250);
+      }
+    }
+
+    // ============================================================
+    //  起動
+    // ============================================================
+    initGame();
+  </script>
+</body>
+</html>

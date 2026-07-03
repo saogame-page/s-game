@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>⚡ ポケモンクイズ — ちびっこミニゲームランド</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Kosugi+Maru&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Kosugi Maru', 'Hiragino Maru Gothic ProN', 'BIZ UDGothic', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow-x: hidden;
+
+  /* ポケモン風パステル背景 */
+  background-color: #fef6ff;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Ctext y='72' font-size='58' opacity='0.09'%3E⚡%3C/text%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Ctext x='60' y='72' font-size='58' opacity='0.09'%3E🌟%3C/text%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Ctext y='72' font-size='58' opacity='0.09'%3E❤️%3C/text%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Ctext x='60' y='72' font-size='58' opacity='0.09'%3E✨%3C/text%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Ctext x='30' y='36' font-size='58' opacity='0.07'%3E🔵%3C/text%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Ctext x='90' y='108' font-size='58' opacity='0.07'%3E🔴%3C/text%3E%3C/svg%3E");
+  background-size: 240px 240px;
+  background-position:
+    0 0, 120px 0,
+    0 120px, 120px 120px,
+    60px 60px, 180px 180px;
+  background-repeat: repeat;
+  padding: 12px 12px 48px;
+}
+
+/* ── もどるボタン ── */
+.back-bar {
+  width: 100%;
+  max-width: 520px;
+  margin-bottom: 10px;
+}
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 18px;
+  background: rgba(255,255,255,0.88);
+  color: #aaa;
+  border: 2px solid #ebebeb;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: bold;
+  cursor: pointer;
+  text-decoration: none;
+  box-shadow: 0 2px 0 #e0e0e0;
+  transition: color 0.15s, transform 0.12s;
+  -webkit-tap-highlight-color: transparent;
+}
+.back-btn:hover  { color: #666; transform: translateY(-1px); }
+.back-btn:active { transform: translateY(1px); }
+
+/* ── メインカード ── */
+#app {
+  background: rgba(255,255,255,0.93);
+  border-radius: 32px;
+  padding: 24px 18px 30px;
+  max-width: 520px;
+  width: 100%;
+  box-shadow:
+    0 0 0 3px #e8d0ff,
+    0 10px 40px rgba(160,80,255,0.10),
+    0 2px 12px rgba(0,0,0,0.07);
+  text-align: center;
+}
+
+h1 {
+  font-size: clamp(1.5rem, 5vw, 2rem);
+  color: #9b59b6;
+  letter-spacing: 2px;
+  text-shadow: 2px 3px 0 #e8d0ff;
+  margin-bottom: 2px;
+}
+
+/* ── プログレスバー ── */
+#progress-bar-wrap {
+  background: #e8d0ff;
+  border-radius: 99px;
+  height: 13px;
+  margin: 10px 0 6px;
+  overflow: hidden;
+}
+#progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #b26cff, #7c3aed);
+  border-radius: 99px;
+  transition: width 0.55s cubic-bezier(0.25, 1, 0.5, 1);
+}
+#question-num {
+  font-size: 0.9rem;
+  color: #ccc;
+  margin-bottom: 10px;
+}
+
+/* ── ポケモン画像エリア ── */
+.pokemon-photo-wrap {
+  display: flex;
+  justify-content: center;
+  margin: 6px 0 10px;
+}
+.pokemon-photo-frame {
+  width: 180px;
+  height: 180px;
+  background: linear-gradient(145deg, #f0e8ff, #ffe8f8);
+  border-radius: 50%;          /* まるいフレーム */
+  padding: 12px;
+  box-shadow:
+    0 0 0 5px white,
+    0 0 0 8px #d4aaff,
+    0 8px 28px rgba(120,60,200,0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+  animation: poke-pop 0.42s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes poke-pop {
+  0%   { transform: scale(0.4) rotate(-8deg); opacity: 0; }
+  100% { transform: scale(1)   rotate(0deg);  opacity: 1; }
+}
+
+.pokemon-photo-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  image-rendering: auto;
+  transition: transform 0.3s ease;
+}
+.pokemon-photo-frame img:hover { transform: scale(1.06); }
+
+.pokemon-photo-frame .emoji-fallback {
+  font-size: 6rem;
+  line-height: 1;
+  display: none;
+}
+
+/* ── 問題テキスト ── */
+#question-text {
+  font-size: clamp(1.2rem, 4vw, 1.45rem);
+  color: #444;
+  margin: 12px 0 18px;
+  line-height: 1.65;
+  min-height: 2.4em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── 選択ボタン（ぷにぷに） ── */
+#choices {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+}
+
+.choice-btn {
+  font-family: inherit;
+  font-size: clamp(1.2rem, 4.5vw, 1.45rem);
+  font-weight: bold;
+  padding: 22px 18px;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  width: 100%;
+  letter-spacing: 1px;
+  position: relative;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform  0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.12s ease;
+}
+
+/* 3色：黄・赤・青（ポケモン風） */
+.choice-btn:nth-child(1) {
+  background: linear-gradient(175deg, #fff5cc, #ffe577);
+  color: #7a5a00;
+  box-shadow: 0 8px 0 #c8a800, 0 10px 20px rgba(200,180,0,0.18);
+}
+.choice-btn:nth-child(2) {
+  background: linear-gradient(175deg, #ffd6d6, #ff9999);
+  color: #8a0000;
+  box-shadow: 0 8px 0 #cc3333, 0 10px 20px rgba(220,60,60,0.18);
+}
+.choice-btn:nth-child(3) {
+  background: linear-gradient(175deg, #cce8ff, #88ccff);
+  color: #003d80;
+  box-shadow: 0 8px 0 #2266bb, 0 10px 20px rgba(40,100,200,0.18);
+}
+
+.choice-btn:hover:not(:disabled) {
+  transform: translateY(-5px) scale(1.025);
+}
+.choice-btn:active:not(:disabled) {
+  transform: scale(0.94) translateY(6px) !important;
+  transition-duration: 0.07s;
+}
+.choice-btn:nth-child(1):active:not(:disabled) { box-shadow: 0 2px 0 #c8a800; }
+.choice-btn:nth-child(2):active:not(:disabled) { box-shadow: 0 2px 0 #cc3333; }
+.choice-btn:nth-child(3):active:not(:disabled) { box-shadow: 0 2px 0 #2266bb; }
+
+.choice-btn:disabled { cursor: default; }
+
+/* せいかい / ふせいかい */
+.choice-btn.correct {
+  background: linear-gradient(175deg, #d4ffd6, #96f0a0) !important;
+  color: #005500 !important;
+  box-shadow: 0 0 0 5px #44cc55, 0 8px 0 #33aa33 !important;
+  animation: btn-correct 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.choice-btn.wrong {
+  background: linear-gradient(175deg, #ffe0e0, #ffb0b0) !important;
+  color: #880000 !important;
+  box-shadow: 0 0 0 5px #ff5555, 0 8px 0 #cc2222 !important;
+  animation: btn-wrong 0.42s ease;
+}
+
+@keyframes btn-correct {
+  0%   { transform: scale(1); }
+  45%  { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+@keyframes btn-wrong {
+  0%,100% { transform: translateX(0); }
+  20%  { transform: translateX(-9px); }
+  40%  { transform: translateX(9px); }
+  60%  { transform: translateX(-5px); }
+  80%  { transform: translateX(5px); }
+}
+
+/* ── フィードバック ── */
+#feedback {
+  font-size: 1.6rem;
+  font-weight: bold;
+  margin-top: 16px;
+  min-height: 2rem;
+  line-height: 1.3;
+}
+#feedback.correct { color: #27ae60; }
+#feedback.wrong   { color: #e74c3c; }
+
+#next-countdown {
+  margin-top: 10px;
+  font-size: 0.92rem;
+  color: #c0c0c0;
+  min-height: 1.2em;
+}
+
+#quiz-screen { display: flex; flex-direction: column; }
+
+/* ── 結果画面 ── */
+#result-screen {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 4px 0;
+}
+
+#result-emoji {
+  font-size: 5.5rem;
+  line-height: 1;
+  animation: poke-pop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+#result-title {
+  font-size: 2rem;
+  color: #9b59b6;
+  text-shadow: 2px 3px 0 #e8d0ff;
+  letter-spacing: 2px;
+}
+#result-subtitle { font-size: 1.05rem; color: #999; }
+#result-stars {
+  font-size: 2.2rem;
+  letter-spacing: 5px;
+  word-break: break-all;
+  line-height: 1.6;
+}
+#result-score {
+  font-size: 1.3rem;
+  color: #555;
+  background: #f8f0ff;
+  border-radius: 16px;
+  padding: 10px 28px;
+  border: 2px solid #d4aaff;
+}
+
+.result-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  margin-top: 6px;
+}
+
+#retry-btn {
+  font-family: inherit;
+  font-size: 1.3rem;
+  font-weight: bold;
+  background: linear-gradient(150deg, #b26cff, #7c3aed);
+  color: white;
+  border: none;
+  border-radius: 20px;
+  padding: 20px 32px;
+  cursor: pointer;
+  box-shadow: 0 8px 0 #5b21b6, 0 10px 20px rgba(100,40,200,0.20);
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.12s;
+  letter-spacing: 1px;
+  -webkit-tap-highlight-color: transparent;
+}
+#retry-btn:hover  { transform: translateY(-4px); }
+#retry-btn:active { transform: translateY(5px); box-shadow: 0 2px 0 #5b21b6; }
+
+#home-btn {
+  font-family: inherit;
+  font-size: 1.05rem;
+  font-weight: bold;
+  background: white;
+  color: #aaa;
+  border: 2px solid #e8e8e8;
+  border-radius: 20px;
+  padding: 15px 24px;
+  cursor: pointer;
+  box-shadow: 0 5px 0 #ddd;
+  text-decoration: none;
+  display: inline-block;
+  transition: color 0.15s, transform 0.12s;
+  -webkit-tap-highlight-color: transparent;
+}
+#home-btn:hover  { color: #555; transform: translateY(-2px); }
+#home-btn:active { transform: translateY(3px); }
+
+/* ── キラキラパーティクル ── */
+.sparkle-particle {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+  line-height: 1;
+  user-select: none;
+  animation: sparkle-fly var(--dur, 0.85s) ease-out forwards;
+}
+@keyframes sparkle-fly {
+  0%   { transform: translate(0,0) scale(0.2) rotate(0deg); opacity: 1; }
+  70%  { opacity: 1; }
+  100% { transform: translate(var(--tx),var(--ty)) scale(1.1) rotate(var(--tr)); opacity: 0; }
+}
+
+/* ── レスポンシブ ── */
+@media (max-width: 400px) {
+  #app { padding: 18px 12px 24px; }
+  .pokemon-photo-frame { width: 152px; height: 152px; }
+}
+@media (min-width: 768px) {
+  .pokemon-photo-frame { width: 200px; height: 200px; }
+  #app { padding: 32px 32px 36px; }
+}
+</style>
+</head>
+<body>
+
+<div class="back-bar">
+  <a class="back-btn" href="../../index.html">← トップにもどる</a>
+</div>
+
+<div id="app">
+
+  <!-- ── クイズ画面 ── -->
+  <div id="quiz-screen">
+    <h1>⚡ ポケモンクイズ ⚡</h1>
+    <div id="progress-bar-wrap"><div id="progress-bar" style="width:0%"></div></div>
+    <div id="question-num"></div>
+
+    <div class="pokemon-photo-wrap">
+      <div class="pokemon-photo-frame" id="pokemon-frame">
+        <img id="pokemon-img" src="" alt="">
+        <span class="emoji-fallback" id="pokemon-fallback">⚡</span>
+      </div>
+    </div>
+
+    <div id="question-text"></div>
+
+    <div id="choices">
+      <button class="choice-btn" id="btn0"></button>
+      <button class="choice-btn" id="btn1"></button>
+      <button class="choice-btn" id="btn2"></button>
+    </div>
+
+    <div id="feedback"></div>
+    <div id="next-countdown"></div>
+  </div>
+
+  <!-- ── 結果画面 ── -->
+  <div id="result-screen">
+    <div id="result-emoji"></div>
+    <div id="result-title">よくできました！</div>
+    <div id="result-subtitle"></div>
+    <div id="result-stars"></div>
+    <div id="result-score"></div>
+    <div class="result-btns">
+      <button id="retry-btn">もういちどあそぶ 🔄</button>
+      <a id="home-btn" href="../../index.html">🏠 トップにもどる</a>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ============================================================
+// ポケモンデータ（10問）
+// 画像: PokéAPI 公式アートワーク（GitHub Raw）
+// ============================================================
+const POKEAPI = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/';
+
+const ALL_QUESTIONS = [
+  {
+    id: 25,
+    emoji: '⚡',
+    name: 'ぴかちゅう',
+    question: 'このポケモンは だれ？',
+    choices: ['ぴかちゅう', 'いーぶい', 'ぷりん'],
+    answer: 0,
+  },
+  {
+    id: 4,
+    emoji: '🔥',
+    name: 'ひとかげ',
+    question: 'しっぽに ほのおがある ポケモンは だれ？',
+    choices: ['ふしぎだね', 'ひとかげ', 'ぜにがめ'],
+    answer: 1,
+  },
+  {
+    id: 1,
+    emoji: '🌿',
+    name: 'ふしぎだね',
+    question: 'せなかに たねを せおっている ポケモンは だれ？',
+    choices: ['ふしぎだね', 'ぜにがめ', 'こだっく'],
+    answer: 0,
+  },
+  {
+    id: 7,
+    emoji: '💧',
+    name: 'ぜにがめ',
+    question: 'こうらを せおった かめの ポケモンは だれ？',
+    choices: ['こいきんぐ', 'ひとかげ', 'ぜにがめ'],
+    answer: 2,
+  },
+  {
+    id: 133,
+    emoji: '🦊',
+    name: 'いーぶい',
+    question: 'フワフワのしっぽが かわいい ポケモンは だれ？',
+    choices: ['ぷりん', 'いーぶい', 'ぴかちゅう'],
+    answer: 1,
+  },
+  {
+    id: 39,
+    emoji: '🎤',
+    name: 'ぷりん',
+    question: 'うたごえで ねむらせる まるい ポケモンは だれ？',
+    choices: ['ぷりん', 'いーぶい', 'こだっく'],
+    answer: 0,
+  },
+  {
+    id: 143,
+    emoji: '😴',
+    name: 'かびごん',
+    question: 'たべてばかりで よくねる おおきな ポケモンは だれ？',
+    choices: ['こだっく', 'かびごん', 'こいきんぐ'],
+    answer: 1,
+  },
+  {
+    id: 54,
+    emoji: '🦆',
+    name: 'こだっく',
+    question: 'あたまをかかえている あひるの ポケモンは だれ？',
+    choices: ['ぷりん', 'こいきんぐ', 'こだっく'],
+    answer: 2,
+  },
+  {
+    id: 129,
+    emoji: '🐟',
+    name: 'こいきんぐ',
+    question: 'はねるしか できない さかなの ポケモンは だれ？',
+    choices: ['こいきんぐ', 'ぜにがめ', 'ふしぎだね'],
+    answer: 0,
+  },
+  {
+    id: 6,
+    emoji: '🐉',
+    name: 'りざーどん',
+    question: 'おおきなつばさで そらを とぶ ポケモンは だれ？',
+    choices: ['ぴかちゅう', 'いーぶい', 'りざーどん'],
+    answer: 2,
+  },
+];
+
+// ============================================================
+// 音（Web Audio API）
+// ============================================================
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx;
+function getAC() { if (!audioCtx) audioCtx = new AudioCtx(); return audioCtx; }
+
+/** ピンポーン（せいかい） */
+function playPinPon() {
+  const ac = getAC();
+  const make = (freq, start, dur, vol = 0.45) => {
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = 'sine'; o.frequency.value = freq;
+    o.connect(g); g.connect(ac.destination);
+    g.gain.setValueAtTime(vol, start);
+    g.gain.exponentialRampToValueAtTime(0.001, start + dur);
+    o.start(start); o.stop(start + dur + 0.05);
+  };
+  const t = ac.currentTime;
+  make(880, t,        0.5);
+  make(660, t + 0.22, 0.65);
+}
+
+/** ブブー（ふせいかい） */
+function playBuBu() {
+  const ac = getAC();
+  [0, 0.20].forEach(d => {
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = 'square'; o.frequency.value = 170;
+    o.connect(g); g.connect(ac.destination);
+    const t = ac.currentTime + d;
+    g.gain.setValueAtTime(0.28, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+    o.start(t); o.stop(t + 0.25);
+  });
+}
+
+/** ファンファーレ（けっか） */
+function playFinale() {
+  const ac = getAC();
+  [523, 659, 784, 1047, 784, 1047, 1319].forEach((f, i) => {
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = 'sine'; o.frequency.value = f;
+    o.connect(g); g.connect(ac.destination);
+    const t = ac.currentTime + i * 0.13;
+    g.gain.setValueAtTime(0.26, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.28);
+    o.start(t); o.stop(t + 0.32);
+  });
+}
+
+// ============================================================
+// キラキラエフェクト
+// ============================================================
+const SPARKS = ['⭐','✨','🌟','💫','⚡','✨','🌟','💛','⭐','✨'];
+
+function launchSparkles(cx, cy) {
+  SPARKS.forEach((em, i) => {
+    const el = document.createElement('span');
+    el.className = 'sparkle-particle';
+    el.textContent = em;
+    const sz  = 1.1 + Math.random() * 1.3;
+    el.style.fontSize = sz + 'rem';
+    el.style.left     = cx + 'px';
+    el.style.top      = cy + 'px';
+    const angle = (360 / SPARKS.length) * i + Math.random() * 15;
+    const dist  = 70 + Math.random() * 110;
+    const tx = Math.cos(angle * Math.PI / 180) * dist;
+    const ty = Math.sin(angle * Math.PI / 180) * dist - 50;
+    el.style.setProperty('--tx',  tx + 'px');
+    el.style.setProperty('--ty',  ty + 'px');
+    el.style.setProperty('--tr',  ((Math.random() - 0.5) * 540) + 'deg');
+    el.style.setProperty('--dur', (0.75 + Math.random() * 0.35) + 's');
+    el.style.animationDelay = (i * 0.042) + 's';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 1200);
+  });
+}
+
+function sparkleFromFrame() {
+  const r = document.getElementById('pokemon-frame').getBoundingClientRect();
+  launchSparkles(r.left + r.width / 2, r.top + r.height / 2);
+}
+
+// ============================================================
+// クイズロジック
+// ============================================================
+let questions = [], current = 0, score = 0, answered = false;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function startQuiz() {
+  questions = shuffle(ALL_QUESTIONS);
+  current = 0; score = 0;
+  document.getElementById('result-screen').style.display = 'none';
+  document.getElementById('quiz-screen').style.display  = 'flex';
+  showQuestion();
+}
+
+function loadPokemonImage(q) {
+  const img   = document.getElementById('pokemon-img');
+  const fb    = document.getElementById('pokemon-fallback');
+  const frame = document.getElementById('pokemon-frame');
+
+  frame.style.animation = 'none';
+  void frame.offsetWidth;
+  frame.style.animation = '';
+
+  fb.textContent   = q.emoji;
+  fb.style.display = 'none';
+  img.style.display = 'block';
+  img.alt = q.name;
+
+  img.onerror = () => {
+    img.style.display = 'none';
+    fb.style.display  = 'block';
+  };
+  img.src = POKEAPI + q.id + '.png';
+}
+
+function showQuestion() {
+  answered = false;
+  clearTimeout(window._nextTimer);
+  clearInterval(window._countTimer);
+
+  const q = questions[current];
+
+  document.getElementById('progress-bar').style.width =
+    (current / questions.length * 100) + '%';
+  document.getElementById('question-num').textContent =
+    `もんだい ${current + 1} / ${questions.length}`;
+
+  loadPokemonImage(q);
+  document.getElementById('question-text').textContent = q.question;
+
+  const idx  = shuffle([0, 1, 2]);
+  const btns = ['btn0','btn1','btn2'].map(id => document.getElementById(id));
+  btns.forEach((btn, pos) => {
+    const ci = idx[pos];
+    btn.textContent       = q.choices[ci];
+    btn.dataset.choiceIdx = ci;
+    btn.disabled          = false;
+    btn.className         = 'choice-btn';
+  });
+
+  document.getElementById('feedback').textContent       = '';
+  document.getElementById('feedback').className         = '';
+  document.getElementById('next-countdown').textContent = '';
+}
+
+function handleAnswer(choiceIdx) {
+  if (answered) return;
+  answered = true;
+
+  const q       = questions[current];
+  const correct = parseInt(choiceIdx) === q.answer;
+  const btns    = ['btn0','btn1','btn2'].map(id => document.getElementById(id));
+
+  btns.forEach(btn => {
+    btn.disabled = true;
+    if (parseInt(btn.dataset.choiceIdx) === q.answer) btn.classList.add('correct');
+  });
+
+  const fb = document.getElementById('feedback');
+  if (correct) {
+    score++;
+    fb.textContent = '⭕ すごい！ せいかい！';
+    fb.className   = 'correct';
+    playPinPon();
+    sparkleFromFrame();
+    setTimeout(sparkleFromFrame, 220);
+  } else {
+    fb.textContent = '❌ ざんねん！ ちがったよ〜';
+    fb.className   = 'wrong';
+    playBuBu();
+  }
+
+  let rem = 2;
+  const cd = document.getElementById('next-countdown');
+  cd.textContent = `つぎのもんだいへ… ${rem}`;
+  window._countTimer = setInterval(() => {
+    rem--;
+    if (rem > 0) cd.textContent = `つぎのもんだいへ… ${rem}`;
+  }, 1000);
+  window._nextTimer = setTimeout(() => {
+    clearInterval(window._countTimer);
+    nextQuestion();
+  }, 2000);
+}
+
+function nextQuestion() {
+  current++;
+  if (current >= questions.length) showResult();
+  else showQuestion();
+}
+
+function showResult() {
+  document.getElementById('progress-bar').style.width   = '100%';
+  document.getElementById('quiz-screen').style.display  = 'none';
+  document.getElementById('result-screen').style.display = 'flex';
+
+  const pct = score / questions.length;
+  let trophy, subtitle;
+  if      (pct === 1)  { trophy = '🏆'; subtitle = 'ぜんぶ せいかい！ さいこう！！'; }
+  else if (pct >= 0.7) { trophy = '🌟'; subtitle = 'とっても よくできました！'; }
+  else if (pct >= 0.4) { trophy = '😊'; subtitle = 'がんばったね！'; }
+  else                 { trophy = '💪'; subtitle = 'またちょうせんしよう！'; }
+
+  document.getElementById('result-emoji').textContent    = trophy;
+  document.getElementById('result-subtitle').textContent = subtitle;
+  document.getElementById('result-stars').textContent    =
+    '⭐'.repeat(score) + '☆'.repeat(questions.length - score);
+  document.getElementById('result-score').textContent    =
+    `${questions.length}もんちゅう ${score}もん せいかい！`;
+
+  playFinale();
+  const cx = window.innerWidth / 2, cy = window.innerHeight / 2;
+  setTimeout(() => launchSparkles(cx, cy),        150);
+  setTimeout(() => launchSparkles(cx - 80, cy - 60), 500);
+  setTimeout(() => launchSparkles(cx + 80, cy - 60), 750);
+}
+
+// ── イベント ──
+['btn0','btn1','btn2'].forEach(id => {
+  document.getElementById(id).addEventListener('click', function () {
+    handleAnswer(this.dataset.choiceIdx);
+  });
+});
+document.getElementById('retry-btn').addEventListener('click', startQuiz);
+
+startQuiz();
+</script>
+</body>
+</html>

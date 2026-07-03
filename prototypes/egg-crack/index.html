@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🥚 たまごをわろう</title>
+  <link href="https://fonts.googleapis.com/css2?family=Kosugi+Maru&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      height: 100dvh; overflow: hidden;
+      font-family: 'Kosugi Maru', sans-serif;
+    }
+
+    /* ── 背景：牧場 ── */
+    .bg {
+      position: fixed; inset: 0;
+      background: linear-gradient(180deg,
+        #7dd3fc 0%, #bae6fd 45%,
+        #d4f5a8 60%, #86efac 65%,
+        #4ade80 70%, #22c55e 100%);
+    }
+    /* 草地 */
+    .grass {
+      position: fixed; bottom: 0; left: 0; right: 0; height: 30%;
+      background: linear-gradient(180deg, #4ade80 0%, #16a34a 100%);
+      border-radius: 60% 60% 0 0 / 40px 40px 0 0;
+    }
+    .sun {
+      position: fixed; top: 24px; left: 28px;
+      font-size: clamp(2.5rem,7vw,3.8rem);
+      filter: drop-shadow(0 0 16px rgba(255,200,0,0.7));
+      animation: sun-spin 30s linear infinite;
+    }
+    @keyframes sun-spin { to { transform: rotate(360deg); } }
+    .cloud {
+      position: fixed; font-size: clamp(1.8rem,5vw,2.8rem); opacity: 0.8;
+      animation: cloud-drift var(--dur) linear var(--del) infinite; top: var(--top);
+    }
+    @keyframes cloud-drift { from { left:-12%; } to { left:112%; } }
+
+    /* ── HUD ── */
+    .hud {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 20;
+      padding: 10px 14px; display: flex;
+      align-items: center; justify-content: space-between;
+    }
+    .chip {
+      background: rgba(255,255,255,0.88); border-radius: 16px; padding: 6px 14px;
+      font-size: 1rem; color: #444; box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    }
+    .home-link {
+      background: rgba(255,255,255,0.88); border-radius: 16px;
+      padding: 6px 14px; color: #666; font-size: 0.9rem; text-decoration: none;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+    }
+
+    /* ── たまご ── */
+    .egg-wrap {
+      position: relative;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: flex-end;
+      cursor: pointer;
+      touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    .egg {
+      font-size: var(--esize);
+      line-height: 1;
+      filter: drop-shadow(0 6px 10px rgba(0,0,0,0.18));
+      transition: transform 0.1s;
+      pointer-events: none;
+    }
+    .egg-label {
+      font-size: clamp(0.8rem,2.2vw,0.95rem); color: #555;
+      margin-top: 4px; pointer-events: none;
+    }
+
+    /* たたく → シェイク */
+    .egg-wrap.shake { animation: egg-shake 0.35s ease-out; }
+    @keyframes egg-shake {
+      0%,100% { transform: rotate(0deg); }
+      20%      { transform: rotate(-12deg) scale(1.08); }
+      50%      { transform: rotate(10deg) scale(1.12); }
+      80%      { transform: rotate(-6deg) scale(1.05); }
+    }
+
+    /* ひびが入ったとき */
+    .egg-wrap.cracked .egg::after {
+      content: '💥'; font-size: 0.6em;
+      position: absolute; top: -10px; left: 50%;
+      transform: translateX(-50%);
+      animation: crack-pop 0.3s ease-out;
+    }
+    @keyframes crack-pop {
+      from { transform: translateX(-50%) scale(0); }
+      to   { transform: translateX(-50%) scale(1); }
+    }
+
+    /* 孵化アニメ */
+    .egg-wrap.hatched { animation: hatch 0.55s cubic-bezier(0.18,1.5,0.5,1) forwards; }
+    @keyframes hatch {
+      0%   { transform: scale(1); }
+      35%  { transform: scale(1.3) rotate(-8deg); }
+      60%  { transform: scale(0.1) rotate(30deg); opacity: 1; }
+      70%  { transform: scale(1.6) rotate(-4deg); opacity: 1; }
+      100% { transform: scale(1) rotate(0deg); }
+    }
+
+    /* 孵化後の動物が踊る */
+    .animal-born {
+      font-size: var(--esize);
+      filter: drop-shadow(0 6px 10px rgba(0,0,0,0.15));
+      pointer-events: none;
+      animation: dance 0.8s ease-in-out infinite;
+    }
+    @keyframes dance {
+      0%,100% { transform: translateY(0) rotate(-5deg) scale(1); }
+      50%      { transform: translateY(-14px) rotate(5deg) scale(1.08); }
+    }
+
+    /* タップカウント（ひび） */
+    .crack-count {
+      position: absolute; top: -16px; left: 50%; transform: translateX(-50%);
+      font-size: 1.1rem; pointer-events: none;
+    }
+
+    /* エフェクト */
+    .fx {
+      position: fixed; pointer-events: none; z-index: 30;
+      font-size: 1.5rem;
+      animation: fx-fly 0.75s ease-out forwards;
+    }
+    @keyframes fx-fly {
+      0%   { transform: translate(var(--sx),var(--sy)) scale(0.3); opacity: 1; }
+      60%  { transform: translate(var(--ex),var(--ey)) scale(1.2); opacity: 1; }
+      100% { transform: translate(var(--ex2),var(--ey2)) scale(0.6); opacity: 0; }
+    }
+
+    /* ── 全部孵化したクリア画面 ── */
+    .clear-overlay {
+      position: fixed; inset: 0; z-index: 50;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background: rgba(0,0,0,0.38); backdrop-filter: blur(5px);
+    }
+    .clear-overlay.hidden { display: none; }
+    .clear-card {
+      background: #fff; border-radius: 28px;
+      padding: 26px 20px 20px; width: 90%; max-width: 360px;
+      text-align: center; box-shadow: 0 14px 44px rgba(0,0,0,0.22);
+      animation: cin 0.4s cubic-bezier(0.18,1.5,0.5,1);
+    }
+    @keyframes cin { from { transform: scale(0.35); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .clear-emoji  { font-size: 2.8rem; }
+    .clear-title  { font-size: 2rem; margin: 8px 0 4px; }
+    .clear-sub    { color: #888; font-size: 0.95rem; margin-bottom: 10px; }
+    .born-grid    { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 12px 0 18px; }
+    .born-icon    { font-size: 2rem; animation: dance 0.8s ease-in-out var(--d) infinite; }
+    .btn {
+      display: block; width: 100%; padding: 13px; margin-bottom: 10px;
+      border: none; border-radius: 50px;
+      font-family: 'Kosugi Maru', sans-serif; font-size: 1.05rem; font-weight: bold;
+      cursor: pointer; touch-action: manipulation; text-decoration: none; text-align: center;
+    }
+    .btn-green { background: linear-gradient(160deg,#4ade80,#16a34a); color:#fff;
+                 box-shadow: 0 5px 0 #0a5e24; }
+    .btn-green:active { box-shadow: 0 2px 0 #0a5e24; transform: translateY(3px); }
+    .btn-gray  { background: linear-gradient(160deg,#ccc,#999); color:#fff; box-shadow: 0 5px 0 #666; }
+
+    /* グリッド */
+    .egg-grid {
+      position: fixed; inset: 65px 0 0;
+      display: flex; flex-wrap: wrap; align-content: center;
+      align-items: flex-end; justify-content: center;
+      gap: clamp(10px,2.5vw,22px); padding: 0 12px 30%;
+      z-index: 5;
+    }
+
+    /* 紙吹雪 */
+    .confetti { position: fixed; pointer-events: none; z-index: 45;
+      width: 10px; height: 10px; border-radius: 2px;
+      animation: conf var(--dur) linear var(--del) forwards; }
+    @keyframes conf {
+      0%   { transform: translate(var(--x), -20px) rotate(0deg); opacity: 1; }
+      100% { transform: translate(calc(var(--x) + var(--dx)), 110vh) rotate(var(--rot)); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+<div class="bg"></div>
+<div class="grass"></div>
+<div class="sun">☀️</div>
+<div class="cloud" style="--dur:24s;--del:0s;  --top:8%">☁️</div>
+<div class="cloud" style="--dur:18s;--del:-8s; --top:13%; font-size:1.8rem">☁️</div>
+
+<div class="hud">
+  <div class="chip">🥚 たまごをわろう</div>
+  <div class="chip">🐣 <span id="hatch-count">0</span> / <span id="total">6</span></div>
+  <a class="home-link" href="../../index.html">← もどる</a>
+</div>
+
+<div class="egg-grid" id="egg-grid"></div>
+
+<!-- クリア -->
+<div class="clear-overlay hidden" id="clear-overlay">
+  <div class="clear-card">
+    <div class="clear-emoji">🎉</div>
+    <div class="clear-title">ぜんぶかえった！</div>
+    <div class="clear-sub">でてきた どうぶつ</div>
+    <div class="born-grid" id="born-grid"></div>
+    <button class="btn btn-green" id="btn-retry">もういちど！</button>
+    <a class="btn btn-gray" href="../../index.html">← トップにもどる</a>
+  </div>
+</div>
+
+<script>
+  // ============================================================
+  //  たまごデータ ── 色たまご → かえる動物
+  //  taps: 孵化に必要なタップ数  color: たまごの色（絵文字）
+  // ============================================================
+  const EGG_DATA = [
+    { eggColor:'🥚', animal:'🐥', name:'ひよこ',   taps:3, esize:'clamp(3.5rem,11vw,5.5rem)' },
+    { eggColor:'🪺', animal:'🐰', name:'うさぎ',   taps:4, esize:'clamp(3.5rem,11vw,5.5rem)' },
+    { eggColor:'🥚', animal:'🐸', name:'かえる',   taps:3, esize:'clamp(3.5rem,11vw,5.5rem)' },
+    { eggColor:'🪺', animal:'🦕', name:'きょうりゅう', taps:5, esize:'clamp(3.5rem,11vw,5.5rem)' },
+    { eggColor:'🥚', animal:'🐢', name:'かめ',     taps:3, esize:'clamp(3.5rem,11vw,5.5rem)' },
+    { eggColor:'🪺', animal:'🦋', name:'ちょうちょ', taps:4, esize:'clamp(3.5rem,11vw,5.5rem)' },
+  ];
+
+  let hatchCount = 0;
+  let audioCtx = null;
+  function initAudio() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  function playTap(n) {
+    if (!audioCtx) return;
+    const f = 300 + n * 60;
+    const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+    o.connect(g); g.connect(audioCtx.destination); o.type='triangle'; o.frequency.value=f;
+    g.gain.setValueAtTime(0.18, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime+0.18);
+    o.start(); o.stop(audioCtx.currentTime+0.2);
+  }
+  function playHatch() {
+    if (!audioCtx) return;
+    [[0,523],[0.1,659],[0.2,784],[0.32,1047]].forEach(([t,f]) => {
+      const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+      o.connect(g); g.connect(audioCtx.destination); o.type='sine'; o.frequency.value=f;
+      g.gain.setValueAtTime(0.2, audioCtx.currentTime+t);
+      g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime+t+0.22);
+      o.start(audioCtx.currentTime+t); o.stop(audioCtx.currentTime+t+0.24);
+    });
+  }
+
+  function spawnFX(cx, cy, icons) {
+    icons.forEach((ic, i) => {
+      const el = document.createElement('div'); el.className = 'fx'; el.textContent = ic;
+      const angle = (Math.PI*2*i/icons.length) - Math.PI/2;
+      const d1 = 55 + Math.random()*30, d2 = 90 + Math.random()*40;
+      el.style.setProperty('--sx', cx+'px'); el.style.setProperty('--sy', cy+'px');
+      el.style.setProperty('--ex', (cx+Math.cos(angle)*d1)+'px');
+      el.style.setProperty('--ey', (cy+Math.sin(angle)*d1)+'px');
+      el.style.setProperty('--ex2', (cx+Math.cos(angle)*d2)+'px');
+      el.style.setProperty('--ey2', (cy+Math.sin(angle)*d2)+'px');
+      el.style.left='0'; el.style.top='0';
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 800);
+    });
+  }
+
+  function launchConfetti() {
+    const colors = ['#ff6b6b','#ffd93d','#6bcb77','#4d96ff','#ff6b9d','#c77dff'];
+    for (let i = 0; i < 60; i++) {
+      const el = document.createElement('div'); el.className = 'confetti';
+      const x = Math.random()*100+'vw';
+      el.style.setProperty('--x', x);
+      el.style.setProperty('--dx', (Math.random()*100-50)+'px');
+      el.style.setProperty('--dur', (2+Math.random()*1.5)+'s');
+      el.style.setProperty('--del', (Math.random()*0.6)+'s');
+      el.style.setProperty('--rot', (Math.random()*720-360)+'deg');
+      el.style.background = colors[Math.floor(Math.random()*colors.length)];
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 3500);
+    }
+  }
+
+  // ── たまご生成 ──
+  const grid = document.getElementById('egg-grid');
+  const CRACK_ICONS = ['🔸','💢','⚡','✨'];
+
+  function buildEggs() {
+    grid.innerHTML = '';
+    hatchCount = 0;
+    document.getElementById('hatch-count').textContent = '0';
+    document.getElementById('total').textContent = EGG_DATA.length;
+
+    EGG_DATA.forEach((data) => {
+      let tapsDone = 0;
+      let hatched = false;
+
+      const wrap = document.createElement('div');
+      wrap.className = 'egg-wrap';
+
+      const crackEl = document.createElement('div');
+      crackEl.className = 'crack-count';
+
+      const eggEl = document.createElement('div');
+      eggEl.className = 'egg';
+      eggEl.style.setProperty('--esize', data.esize);
+      eggEl.textContent = data.eggColor;
+
+      const labelEl = document.createElement('div');
+      labelEl.className = 'egg-label';
+      labelEl.textContent = `タップ！`;
+
+      wrap.appendChild(crackEl);
+      wrap.appendChild(eggEl);
+      wrap.appendChild(labelEl);
+
+      wrap.addEventListener('pointerdown', e => {
+        e.preventDefault();
+        if (hatched) return;
+        initAudio();
+        tapsDone++;
+        playTap(tapsDone);
+
+        // シェイク
+        wrap.classList.remove('shake');
+        void wrap.offsetWidth;
+        wrap.classList.add('shake');
+        setTimeout(() => wrap.classList.remove('shake'), 380);
+
+        // ひびエフェクト
+        const rect = wrap.getBoundingClientRect();
+        const cx = rect.left + rect.width/2;
+        const cy = rect.top  + rect.height/2;
+        spawnFX(cx, cy, [CRACK_ICONS[Math.floor(Math.random()*CRACK_ICONS.length)]]);
+
+        // ひびの数表示
+        const left = data.taps - tapsDone;
+        if (left > 0) {
+          crackEl.textContent = '💢'.repeat(tapsDone);
+          labelEl.textContent = `あと${left}かい！`;
+        }
+
+        if (tapsDone >= data.taps) {
+          // 孵化！
+          hatched = true;
+          eggEl.textContent = data.animal;
+          crackEl.textContent = '';
+          labelEl.textContent = data.name;
+          wrap.style.cursor = 'default';
+          wrap.classList.add('hatched');
+          setTimeout(() => {
+            wrap.classList.remove('hatched');
+            const born = document.createElement('div');
+            born.className = 'animal-born';
+            born.style.setProperty('--esize', data.esize);
+            born.style.setProperty('--d', (Math.random()*0.3)+'s');
+            born.textContent = data.animal;
+            wrap.removeChild(eggEl);
+            wrap.insertBefore(born, crackEl.nextSibling);
+          }, 200);
+
+          playHatch();
+          spawnFX(cx, cy, ['🎉','⭐','💫','✨','🌟','🎊']);
+
+          hatchCount++;
+          document.getElementById('hatch-count').textContent = hatchCount;
+          if (hatchCount === EGG_DATA.length) {
+            setTimeout(showClear, 800);
+          }
+        }
+      });
+
+      grid.appendChild(wrap);
+    });
+  }
+
+  function showClear() {
+    launchConfetti();
+    const bg = document.getElementById('born-grid');
+    bg.innerHTML = '';
+    EGG_DATA.forEach((d,i) => {
+      const el = document.createElement('div'); el.className = 'born-icon';
+      el.textContent = d.animal; el.style.setProperty('--d', (i*0.12)+'s');
+      bg.appendChild(el);
+    });
+    document.getElementById('clear-overlay').classList.remove('hidden');
+  }
+
+  document.getElementById('btn-retry').addEventListener('click', () => {
+    document.getElementById('clear-overlay').classList.add('hidden');
+    buildEggs();
+  });
+
+  document.body.addEventListener('pointerdown', () => initAudio(), { once: true });
+  buildEggs();
+</script>
+</body>
+</html>

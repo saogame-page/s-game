@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>⭐ おほしさまあつめ</title>
+  <link href="https://fonts.googleapis.com/css2?family=Kosugi+Maru&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      height: 100dvh; overflow: hidden;
+      font-family: 'Kosugi Maru', sans-serif;
+      background: #04061a;
+    }
+
+    /* ── 背景 ── */
+    .sky {
+      position: fixed; inset: 0;
+      background: radial-gradient(ellipse at 50% 30%, #1a1060 0%, #04061a 70%);
+    }
+    /* 固定の小さい星（装飾） */
+    .bg-stars {
+      position: fixed; inset: 0; pointer-events: none;
+    }
+    .bs {
+      position: absolute; border-radius: 50%;
+      background: #fff;
+      animation: twinkle var(--dur) ease-in-out var(--delay) infinite;
+    }
+    @keyframes twinkle {
+      0%,100% { opacity: var(--lo); transform: scale(1); }
+      50%      { opacity: 1;         transform: scale(1.4); }
+    }
+
+    /* 月 */
+    .moon {
+      position: fixed; top: 24px; right: 32px;
+      font-size: clamp(2.5rem, 8vw, 4rem);
+      filter: drop-shadow(0 0 20px rgba(255,240,160,0.7));
+      animation: moon-sway 8s ease-in-out infinite;
+    }
+    @keyframes moon-sway {
+      0%,100% { transform: rotate(-5deg); }
+      50%      { transform: rotate(5deg); }
+    }
+
+    /* 地面シルエット */
+    .ground {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      height: 15%;
+      background: linear-gradient(180deg, #0a1a38 0%, #060e1e 100%);
+      border-radius: 60% 60% 0 0 / 30px 30px 0 0;
+    }
+    /* 木・建物シルエット */
+    .silhouette {
+      position: fixed; bottom: 12%; pointer-events: none; font-size: clamp(2.8rem, 8vw, 4.5rem);
+      filter: brightness(0) saturate(0) opacity(0.4);
+    }
+
+    /* ── HUD ── */
+    .hud {
+      position: fixed; top: 0; left: 0; right: 0;
+      padding: 10px 14px; display: flex;
+      align-items: center; justify-content: space-between; z-index: 20;
+    }
+    .chip {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 16px; padding: 6px 14px;
+      color: #fff; font-size: 1rem;
+    }
+    .home-link {
+      background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 16px; padding: 6px 14px;
+      color: #aaa; font-size: 0.9rem; text-decoration: none;
+    }
+
+    /* ── タップ可能な星 ── */
+    .star {
+      position: fixed;
+      font-size: var(--size);
+      pointer-events: auto;
+      cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      transform: translate(-50%, -50%);
+      filter: drop-shadow(0 0 10px rgba(255,230,100,0.8));
+      animation: star-appear var(--life) ease-in-out forwards;
+      z-index: 10;
+    }
+    @keyframes star-appear {
+      0%   { opacity: 0; transform: translate(-50%,-50%) scale(0.2) rotate(-20deg); }
+      10%  { opacity: 1; transform: translate(-50%,-50%) scale(1.15) rotate(5deg); }
+      15%  { transform: translate(-50%,-50%) scale(1) rotate(0deg); }
+      80%  { opacity: 1; }
+      100% { opacity: 0; transform: translate(-50%,-50%) scale(0.6); }
+    }
+    .star.caught {
+      pointer-events: none;
+      animation: star-catch 0.4s ease-out forwards !important;
+    }
+    @keyframes star-catch {
+      0%   { transform: translate(-50%,-50%) scale(1); opacity: 1; }
+      50%  { transform: translate(-50%,-50%) scale(1.8); opacity: 1; }
+      100% { transform: translate(-50%,-50%) scale(0); opacity: 0; }
+    }
+
+    /* キャッチエフェクト */
+    .catch-fx {
+      position: fixed; pointer-events: none; z-index: 30;
+      animation: cfx 0.7s ease-out forwards;
+    }
+    @keyframes cfx {
+      0%   { transform: translate(-50%,-50%) scale(0.3); opacity: 1; }
+      50%  { transform: translate(-50%,-50%) scale(1.5); opacity: 1; }
+      100% { transform: translate(-50%,-50%) scale(1); opacity: 0; }
+    }
+
+    /* ── 流れ星 ── */
+    .shooting-star {
+      position: fixed; pointer-events: none; z-index: 8;
+      font-size: 1.8rem;
+      animation: shoot var(--dur) linear forwards;
+    }
+    @keyframes shoot {
+      from { transform: translate(0,0) rotate(var(--rot)); opacity: 1; }
+      to   { transform: translate(var(--tx), var(--ty)) rotate(var(--rot)); opacity: 0; }
+    }
+
+    /* スコアポップ */
+    .score-pop {
+      position: fixed; pointer-events: none; z-index: 40;
+      color: #ffd700; font-size: 1.6rem; font-weight: bold;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.7);
+      animation: score-rise 0.8s ease-out forwards;
+    }
+    @keyframes score-rise {
+      0%   { transform: translateX(-50%) translateY(0)   scale(0.5); opacity: 1; }
+      60%  { transform: translateX(-50%) translateY(-50px) scale(1.1); opacity: 1; }
+      100% { transform: translateX(-50%) translateY(-80px) scale(0.8); opacity: 0; }
+    }
+
+    /* カウンター大表示 */
+    .big-count {
+      position: fixed; bottom: 16%; left: 50%; transform: translateX(-50%);
+      color: rgba(255,230,100,0.9); font-size: clamp(1rem, 4vw, 1.4rem);
+      text-shadow: 0 0 12px rgba(255,200,0,0.6); z-index: 20;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+
+<div class="sky"></div>
+<div class="bg-stars" id="bg-stars"></div>
+
+<div class="moon">🌙</div>
+
+<div class="ground"></div>
+<div class="silhouette" style="left:3%">🌲</div>
+<div class="silhouette" style="left:9%; font-size:3.5rem">🏠</div>
+<div class="silhouette" style="right:4%">🌲</div>
+<div class="silhouette" style="right:10%; font-size:3rem">🏠</div>
+
+<div class="hud">
+  <div class="chip">⭐ おほしさまあつめ</div>
+  <div class="chip" id="score-chip">🌟 <span id="score">0</span></div>
+  <a class="home-link" href="../../index.html">← もどる</a>
+</div>
+
+<div class="big-count" id="big-count">タップしてあつめよう！</div>
+
+<script>
+  let score = 0;
+  let audioCtx = null;
+  function initAudio() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+
+  // ── 効果音 ──
+  function playChime(score) {
+    if (!audioCtx) return;
+    const baseFreq = 523 + (score % 8) * 80;
+    [[0, baseFreq], [0.1, baseFreq * 1.25], [0.2, baseFreq * 1.5]].forEach(([t, f]) => {
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.connect(g); g.connect(audioCtx.destination);
+      o.type = 'sine';
+      o.frequency.value = f;
+      g.gain.setValueAtTime(0.2, audioCtx.currentTime + t);
+      g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + t + 0.35);
+      o.start(audioCtx.currentTime + t);
+      o.stop(audioCtx.currentTime + t + 0.36);
+    });
+  }
+
+  // ── 背景の小星生成 ──
+  const bgStars = document.getElementById('bg-stars');
+  for (let i = 0; i < 80; i++) {
+    const el = document.createElement('div');
+    el.className = 'bs';
+    const s = 1 + Math.random() * 2.5;
+    el.style.cssText = `
+      width:${s}px; height:${s}px;
+      left:${Math.random()*100}%; top:${Math.random()*88}%;
+      --dur:${2+Math.random()*4}s; --delay:${Math.random()*4}s;
+      --lo:${0.15+Math.random()*0.45};
+    `;
+    bgStars.appendChild(el);
+  }
+
+  // ── タップ可能な星のデータ ──
+  const STAR_EMOJIS = ['⭐','🌟','💫','✨'];
+
+  function spawnStar() {
+    const el = document.createElement('div');
+    el.className = 'star';
+    const size = clamp(2.2, 4.5 + Math.random() * 2.5, 6.5);
+    const life = (3.5 + Math.random() * 3) + 's';
+    const x = 8 + Math.random() * 84;
+    const y = 8 + Math.random() * 65;
+    el.textContent = STAR_EMOJIS[Math.floor(Math.random() * STAR_EMOJIS.length)];
+    el.style.cssText = `--size:${size}rem; --life:${life}; left:${x}%; top:${y}%;`;
+
+    el.addEventListener('pointerdown', e => {
+      e.preventDefault();
+      if (el.classList.contains('caught')) return;
+      initAudio();
+      el.classList.add('caught');
+      score++;
+      document.getElementById('score').textContent = score;
+      playChime(score);
+      showCatchFX(el);
+      showScorePop(el.getBoundingClientRect());
+      updateBigCount();
+      setTimeout(() => el.remove(), 430);
+    });
+
+    document.body.appendChild(el);
+
+    // 時間切れで自然消滅
+    const ms = parseFloat(life) * 1000;
+    setTimeout(() => { if (!el.classList.contains('caught')) el.remove(); }, ms);
+
+    // 次スポーン
+    setTimeout(spawnStar, 900 + Math.random() * 800);
+  }
+
+  function clamp(min, val, max) { return Math.max(min, Math.min(max, val)); }
+
+  function showCatchFX(starEl) {
+    const rect = starEl.getBoundingClientRect();
+    const cx = rect.left + rect.width/2;
+    const cy = rect.top  + rect.height/2;
+    ['✨','💫','🌟'].forEach((icon, i) => {
+      const el = document.createElement('div');
+      el.className = 'catch-fx';
+      el.textContent = icon;
+      el.style.cssText = `left:${cx + (i-1)*28}px; top:${cy-20}px; font-size:1.4rem;`;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 750);
+    });
+  }
+
+  function showScorePop(rect) {
+    const el = document.createElement('div');
+    el.className = 'score-pop';
+    el.textContent = `+1 ⭐`;
+    el.style.cssText = `left:${rect.left+rect.width/2}px; top:${rect.top}px;`;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 850);
+  }
+
+  function updateBigCount() {
+    const el = document.getElementById('big-count');
+    if (score === 0)  el.textContent = 'タップしてあつめよう！';
+    else if (score < 5)  el.textContent = `⭐ ${score}こ あつめたよ！`;
+    else if (score < 10) el.textContent = `🌟 ${score}こ！すごい！`;
+    else if (score < 20) el.textContent = `💫 ${score}こ！かがやいてる！`;
+    else                 el.textContent = `✨ ${score}こ！ほしのたんていだ！`;
+  }
+
+  // ── 流れ星（たまに） ──
+  function shootingStar() {
+    const el = document.createElement('div');
+    el.className = 'shooting-star';
+    el.textContent = '🌠';
+    el.style.setProperty('--rot', '-30deg');
+    el.style.setProperty('--tx', '160vw');
+    el.style.setProperty('--ty', '40vh');
+    el.style.setProperty('--dur', '1.4s');
+    el.style.left = '-6%'; el.style.top = (5 + Math.random() * 25) + '%';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 1500);
+    setTimeout(shootingStar, 8000 + Math.random() * 10000);
+  }
+
+  // ── 開始 ──
+  document.body.addEventListener('pointerdown', () => initAudio(), { once: true });
+  spawnStar();
+  setTimeout(shootingStar, 4000);
+</script>
+</body>
+</html>

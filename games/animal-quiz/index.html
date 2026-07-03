@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>🐾 どうぶつ3たくクイズ</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Kosugi+Maru&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Kosugi Maru', 'Hiragino Maru Gothic ProN', 'BIZ UDGothic', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow-x: hidden;
+
+  /* ── やさしいパステルグラデーション背景 ── */
+  background: linear-gradient(160deg, #b8e4ff 0%, #c8f0cc 48%, #ffe8b0 100%);
+  background-attachment: fixed;
+  padding: 12px 12px 48px;
+}
+
+/* ── もどるボタン ── */
+.back-bar {
+  width: 100%;
+  max-width: 520px;
+  margin-bottom: 10px;
+}
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 18px;
+  background: rgba(255,255,255,0.88);
+  color: #aaa;
+  border: 2px solid #ebebeb;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: bold;
+  cursor: pointer;
+  text-decoration: none;
+  box-shadow: 0 2px 0 #e0e0e0;
+  transition: color 0.15s, transform 0.12s;
+  -webkit-tap-highlight-color: transparent;
+}
+.back-btn:hover  { color: #666; transform: translateY(-1px); }
+.back-btn:active { transform: translateY(1px); }
+
+/* ── メインカード ── */
+#app {
+  background: rgba(255,255,255,0.93);
+  border-radius: 32px;
+  padding: 24px 18px 30px;
+  max-width: 520px;
+  width: 100%;
+  box-shadow:
+    0 0 0 3px #ffe4cc,
+    0 10px 40px rgba(255,140,80,0.12),
+    0 2px 12px rgba(0,0,0,0.07);
+  text-align: center;
+}
+
+/* タイトル */
+h1 {
+  font-size: clamp(1.5rem, 5vw, 2rem);
+  color: #ff7f50;
+  letter-spacing: 2px;
+  text-shadow: 2px 3px 0 #ffe0cc;
+  margin-bottom: 2px;
+}
+
+/* ── プログレスバー ── */
+#progress-bar-wrap {
+  background: #ffe4cc;
+  border-radius: 99px;
+  height: 13px;
+  margin: 10px 0 6px;
+  overflow: hidden;
+}
+#progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #ffb347, #ff7f50);
+  border-radius: 99px;
+  transition: width 0.55s cubic-bezier(0.25, 1, 0.5, 1);
+}
+#question-num {
+  font-size: 0.9rem;
+  color: #ccc;
+  margin-bottom: 10px;
+}
+
+/* ── 動物フォト ── */
+.animal-photo-wrap {
+  display: flex;
+  justify-content: center;
+  margin: 6px 0 10px;
+}
+.animal-photo-frame {
+  width: 170px;
+  height: 170px;
+  background: white;
+  border-radius: 26px;
+  padding: 10px;
+  /* ポラロイド写真っぽい枠 */
+  box-shadow:
+    0 0 0 5px #fff5ec,
+    0 0 0 7px #ffd6a0,
+    0 8px 28px rgba(0,0,0,0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+  animation: photo-pop 0.42s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes photo-pop {
+  0%   { transform: scale(0.45) rotate(-6deg); opacity: 0; }
+  100% { transform: scale(1) rotate(0deg);     opacity: 1; }
+}
+/* ちいさいカメラアイコン */
+.animal-photo-frame::after {
+  content: '📷';
+  position: absolute;
+  bottom: -3px;
+  right: -2px;
+  font-size: 1.1rem;
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.animal-photo-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 18px;
+  display: block;
+}
+.animal-photo-frame .emoji-fallback {
+  font-size: 7.5rem;
+  line-height: 1;
+  filter: drop-shadow(0 3px 5px rgba(0,0,0,0.10));
+  display: none;
+}
+
+/* ── 問題テキスト ── */
+#question-text {
+  font-size: clamp(1.2rem, 4vw, 1.45rem);
+  color: #444;
+  margin: 10px 0 18px;
+  line-height: 1.65;
+  min-height: 3.2em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── 選択ボタン（ぷにぷに） ── */
+#choices {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+}
+
+.choice-btn {
+  font-family: inherit;
+  font-size: clamp(1.25rem, 4.5vw, 1.5rem);
+  font-weight: bold;
+  padding: 22px 18px;
+  border: none;
+  border-radius: 50px;   /* 大きく丸くてぷにぷに感 */
+  cursor: pointer;
+  width: 100%;
+  letter-spacing: 1px;
+  position: relative;
+  overflow: hidden;      /* 光沢が角から出ないようにクリップ */
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform  0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.12s ease;
+}
+
+/* ── グミ・キャンディ光沢ハイライト ── */
+/* ボタン上部に楕円形の白い光を浮かせてゼリー感を演出 */
+.choice-btn::before {
+  content: '';
+  position: absolute;
+  top: 4px;
+  left: 10%;
+  right: 10%;
+  height: 42%;
+  background: linear-gradient(180deg,
+    rgba(255,255,255,0.82) 0%,
+    rgba(255,255,255,0.42) 45%,
+    rgba(255,255,255,0.00) 100%);
+  border-radius: 0 0 50% 50%;   /* 下側を楕円にして"光の玉"感 */
+  pointer-events: none;
+}
+/* 押したとき光沢を沈める */
+.choice-btn:active::before {
+  opacity: 0.28;
+  top: 6px;
+}
+
+/* 3色 ─ ピンク／ブルー／グリーン */
+.choice-btn:nth-child(1) {
+  background: linear-gradient(175deg, #ffd6ea 0%, #ffaed2 100%);
+  color: #a0004a;
+  box-shadow: 0 8px 0 #e07099, 0 10px 20px rgba(220,80,130,0.18);
+}
+.choice-btn:nth-child(2) {
+  background: linear-gradient(175deg, #c5e8ff 0%, #96ccff 100%);
+  color: #003d80;
+  box-shadow: 0 8px 0 #6699cc, 0 10px 20px rgba(60,120,220,0.18);
+}
+.choice-btn:nth-child(3) {
+  background: linear-gradient(175deg, #c5f5d2 0%, #90e8a8 100%);
+  color: #004a18;
+  box-shadow: 0 8px 0 #55aa66, 0 10px 20px rgba(60,180,90,0.18);
+}
+
+/* ホバーでふわっと浮く */
+.choice-btn:hover:not(:disabled) {
+  transform: translateY(-6px) scale(1.04);
+}
+/* 押したらぎゅっとつぶれる（ぷにぷに） */
+.choice-btn:active:not(:disabled) {
+  transform: scaleX(1.05) scaleY(0.87) translateY(7px) !important;
+  transition-duration: 0.07s;
+}
+.choice-btn:nth-child(1):active:not(:disabled) { box-shadow: 0 2px 0 #e07099; }
+.choice-btn:nth-child(2):active:not(:disabled) { box-shadow: 0 2px 0 #6699cc; }
+.choice-btn:nth-child(3):active:not(:disabled) { box-shadow: 0 2px 0 #55aa66; }
+
+.choice-btn:disabled { cursor: default; }
+
+/* せいかい */
+.choice-btn.correct {
+  background: linear-gradient(175deg, #d4ffd6, #96f0a0) !important;
+  color: #005500 !important;
+  box-shadow: 0 0 0 5px #44cc55, 0 8px 0 #33aa33 !important;
+  animation: btn-correct 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+/* ふせいかい */
+.choice-btn.wrong {
+  background: linear-gradient(175deg, #ffe0e0, #ffb0b0) !important;
+  color: #880000 !important;
+  box-shadow: 0 0 0 5px #ff5555, 0 8px 0 #cc2222 !important;
+  animation: btn-wrong 0.42s ease;
+}
+
+@keyframes btn-correct {
+  0%   { transform: scale(1); }
+  45%  { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+@keyframes btn-wrong {
+  0%,100% { transform: translateX(0); }
+  20%  { transform: translateX(-9px); }
+  40%  { transform: translateX(9px); }
+  60%  { transform: translateX(-5px); }
+  80%  { transform: translateX(5px); }
+}
+
+/* ── フィードバック ── */
+#feedback {
+  font-size: 1.6rem;
+  font-weight: bold;
+  margin-top: 16px;
+  min-height: 2rem;
+  line-height: 1.3;
+}
+#feedback.correct { color: #27ae60; }
+#feedback.wrong   { color: #e74c3c; }
+
+#next-countdown {
+  margin-top: 10px;
+  font-size: 0.92rem;
+  color: #c0c0c0;
+  min-height: 1.2em;
+}
+
+#quiz-screen { display: flex; flex-direction: column; }
+
+/* ── 結果画面 ── */
+#result-screen {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 4px 0;
+}
+
+#result-emoji {
+  font-size: 5.5rem;
+  line-height: 1;
+  animation: photo-pop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+#result-title {
+  font-size: 2rem;
+  color: #ff7f50;
+  text-shadow: 2px 3px 0 #ffe0cc;
+  letter-spacing: 2px;
+}
+
+#result-subtitle {
+  font-size: 1.05rem;
+  color: #999;
+}
+
+#result-stars {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: nowrap;   /* 絶対に1行に収める */
+  gap: 2px;
+  font-size: 1.9rem;   /* 10個が横に確実収まるサイズ */
+  line-height: 1;
+  width: 100%;
+}
+
+#result-score {
+  font-size: 1.3rem;
+  color: #555;
+  background: #fff5ec;
+  border-radius: 16px;
+  padding: 10px 28px;
+  border: 2px solid #ffd6aa;
+}
+
+.result-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  margin-top: 6px;
+}
+
+#retry-btn {
+  font-family: inherit;
+  font-size: 1.3rem;
+  font-weight: bold;
+  background: linear-gradient(150deg, #ffb347, #ff7f50);
+  color: white;
+  border: none;
+  border-radius: 50px;
+  padding: 20px 32px;
+  cursor: pointer;
+  box-shadow: 0 8px 0 #c04000, 0 10px 20px rgba(200,80,0,0.18);
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.12s;
+  letter-spacing: 1px;
+  position: relative;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+#retry-btn::before {
+  content: '';
+  position: absolute;
+  top: 4px;
+  left: 10%;
+  right: 10%;
+  height: 42%;
+  background: linear-gradient(180deg,
+    rgba(255,255,255,0.72) 0%,
+    rgba(255,255,255,0.30) 45%,
+    rgba(255,255,255,0.00) 100%);
+  border-radius: 0 0 50% 50%;
+  pointer-events: none;
+}
+#retry-btn:active::before { opacity: 0.22; top: 6px; }
+#retry-btn:hover  { transform: translateY(-4px); }
+#retry-btn:active { transform: translateY(5px); box-shadow: 0 2px 0 #c04000; }
+
+#home-btn {
+  font-family: inherit;
+  font-size: 1.05rem;
+  font-weight: bold;
+  background: white;
+  color: #aaa;
+  border: 2px solid #e8e8e8;
+  border-radius: 50px;
+  padding: 15px 24px;
+  cursor: pointer;
+  box-shadow: 0 5px 0 #ddd;
+  text-decoration: none;
+  display: inline-block;
+  position: relative;
+  overflow: hidden;
+  transition: color 0.15s, transform 0.12s;
+  -webkit-tap-highlight-color: transparent;
+}
+#home-btn::before {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 10%;
+  right: 10%;
+  height: 42%;
+  background: linear-gradient(180deg,
+    rgba(255,255,255,0.92) 0%,
+    rgba(255,255,255,0.38) 45%,
+    rgba(255,255,255,0.00) 100%);
+  border-radius: 0 0 50% 50%;
+  pointer-events: none;
+}
+#home-btn:active::before { opacity: 0.25; top: 5px; }
+#home-btn:hover  { color: #555; transform: translateY(-2px); }
+#home-btn:active { transform: translateY(3px); }
+
+/* ── キラキラパーティクル ── */
+.sparkle-particle {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+  line-height: 1;
+  user-select: none;
+  animation: sparkle-fly var(--dur, 0.85s) ease-out forwards;
+}
+
+@keyframes sparkle-fly {
+  0%   { transform: translate(0, 0) scale(0.2) rotate(0deg); opacity: 1; }
+  70%  { opacity: 1; }
+  100% { transform: translate(var(--tx), var(--ty)) scale(1.1) rotate(var(--tr)); opacity: 0; }
+}
+
+/* ── スマホ調整 ── */
+@media (max-width: 400px) {
+  #app { padding: 18px 12px 24px; }
+  .animal-photo-frame { width: 148px; height: 148px; }
+}
+</style>
+</head>
+<body>
+
+<div class="back-bar">
+  <a class="back-btn" href="../../index.html">← トップにもどる</a>
+</div>
+
+<div id="app">
+
+  <!-- ── クイズ画面 ── -->
+  <div id="quiz-screen">
+    <h1>🐾 どうぶつクイズ 🐾</h1>
+    <div id="progress-bar-wrap"><div id="progress-bar" style="width:0%"></div></div>
+    <div id="question-num"></div>
+
+    <div class="animal-photo-wrap">
+      <div class="animal-photo-frame" id="animal-frame">
+        <img id="animal-img" src="" alt="">
+        <span class="emoji-fallback" id="animal-fallback"></span>
+      </div>
+    </div>
+
+    <div id="question-text"></div>
+
+    <div id="choices">
+      <button class="choice-btn" id="btn0"></button>
+      <button class="choice-btn" id="btn1"></button>
+      <button class="choice-btn" id="btn2"></button>
+    </div>
+
+    <div id="feedback"></div>
+    <div id="next-countdown"></div>
+  </div>
+
+  <!-- ── 結果画面 ── -->
+  <div id="result-screen">
+    <div id="result-emoji"></div>
+    <div id="result-title">よくできました！</div>
+    <div id="result-subtitle"></div>
+    <div id="result-stars"></div>
+    <div id="result-score"></div>
+    <div class="result-btns">
+      <button id="retry-btn">もういちどあそぶ 🔄</button>
+      <a id="home-btn" href="../../index.html">🏠 トップにもどる</a>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ============================================================
+// 問題データ（10問・ひらがな中心）
+// 動物写真: Wikimedia Commons
+// ============================================================
+// commons.wikimedia.org/wiki/Special:FilePath/ はファイル名だけで
+// Wikimedia CDN の正しい URL にリダイレクトされるため、
+// ハッシュパスを知らなくても確実に画像を取得できる。
+const WMC = 'https://commons.wikimedia.org/wiki/Special:FilePath/';
+
+const ALL_QUESTIONS = [
+  {
+    photo:    '../../assets/images/animals/zou.png',
+    emoji:    '🐘',
+    question: 'はながながーい どうぶつは だれ？',
+    choices:  ['ぞう', 'きりん', 'うさぎ'],
+    answer:   0,
+  },
+  {
+    photo:    '../../assets/images/animals/kirin.png',
+    emoji:    '🦒',
+    question: 'くびがながーい どうぶつは だれ？',
+    choices:  ['うま', 'きりん', 'くま'],
+    answer:   1,
+  },
+  {
+    photo:    '../../assets/images/animals/kaeru.png',
+    emoji:    '🐸',
+    question: '「けろけろ」と なく みどりの どうぶつは だれ？',
+    choices:  ['ねこ', 'いぬ', 'かえる'],
+    answer:   2,
+  },
+  {
+    photo:    '../../assets/images/animals/panda.png',
+    emoji:    '🐼',
+    question: 'くろと しろの もようが かわいい どうぶつは だれ？',
+    choices:  ['しろくま', 'ぱんだ', 'たぬき'],
+    answer:   1,
+  },
+  {
+    photo:    '../../assets/images/animals/raion.png',
+    emoji:    '🦁',
+    question: '「がおー！」と ほえる どうぶつは だれ？',
+    choices:  ['らいおん', 'うし', 'さる'],
+    answer:   0,
+  },
+  {
+    photo:    WMC + 'Penguin_in_Antarctica_jumping_out_of_the_water.jpg?width=400',
+    emoji:    '🐧',
+    question: 'そらを とべないけど およぐのが とくいな とりは だれ？',
+    choices:  ['すずめ', 'ぺんぎん', 'からす'],
+    answer:   1,
+  },
+  {
+    photo:    WMC + 'Tursiops_truncatus_01.jpg?width=400',
+    emoji:    '🐬',
+    question: 'うみで ジャンプする あたまのいい どうぶつは だれ？',
+    choices:  ['いるか', 'くじら', 'うさぎ'],
+    answer:   0,
+  },
+  {
+    photo:    WMC + 'Oryctolagus_cuniculus_Tasmania_2.jpg?width=400',
+    emoji:    '🐰',
+    question: 'ながいながい みみが ある どうぶつは だれ？',
+    choices:  ['ねこ', 'いぬ', 'うさぎ'],
+    answer:   2,
+  },
+  {
+    photo:    '../../assets/images/animals/tora.png',
+    emoji:    '🐯',
+    question: 'しましまもようの オレンジの どうぶつは だれ？',
+    choices:  ['ひょう', 'とら', 'らいおん'],
+    answer:   1,
+  },
+  {
+    photo:    '../../assets/images/animals/kame.png',
+    emoji:    '🐢',
+    question: 'こうらを せおって のろのろ あるく どうぶつは だれ？',
+    choices:  ['かめ', 'とかげ', 'へび'],
+    answer:   0,
+  },
+];
+
+// ============================================================
+// 音 (Web Audio API)
+// ============================================================
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx;
+function getAC() { if (!audioCtx) audioCtx = new AudioCtx(); return audioCtx; }
+
+/** ピンポーン（せいかい） */
+function playPinPon() {
+  const ac = getAC();
+  const make = (freq, start, dur, vol = 0.48) => {
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = 'sine'; o.frequency.value = freq;
+    o.connect(g); g.connect(ac.destination);
+    g.gain.setValueAtTime(vol, start);
+    g.gain.exponentialRampToValueAtTime(0.001, start + dur);
+    o.start(start); o.stop(start + dur + 0.05);
+  };
+  const t = ac.currentTime;
+  make(880, t,        0.5);   // ピン
+  make(660, t + 0.22, 0.65);  // ポーン
+}
+
+/** ブブー（ふせいかい） */
+function playBuBu() {
+  const ac = getAC();
+  const make = (start) => {
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = 'square'; o.frequency.value = 170;
+    o.connect(g); g.connect(ac.destination);
+    g.gain.setValueAtTime(0.30, start);
+    g.gain.exponentialRampToValueAtTime(0.001, start + 0.22);
+    o.start(start); o.stop(start + 0.25);
+  };
+  const t = ac.currentTime;
+  make(t); make(t + 0.20);
+}
+
+/** ファンファーレ（けっか） */
+function playFinale() {
+  const ac = getAC();
+  [523, 659, 784, 1047, 784, 1047, 1319].forEach((f, i) => {
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = 'sine'; o.frequency.value = f;
+    o.connect(g); g.connect(ac.destination);
+    const t = ac.currentTime + i * 0.13;
+    g.gain.setValueAtTime(0.28, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.28);
+    o.start(t); o.stop(t + 0.32);
+  });
+}
+
+// ============================================================
+// キラキラエフェクト
+// ============================================================
+const SPARKS = ['⭐','✨','🌟','💫','⭐','✨','🌟','💛','⭐','✨'];
+
+function launchSparkles(cx, cy) {
+  SPARKS.forEach((em, i) => {
+    const el = document.createElement('span');
+    el.className = 'sparkle-particle';
+    el.textContent = em;
+
+    const sz = 1.1 + Math.random() * 1.3;
+    el.style.fontSize   = sz + 'rem';
+    el.style.left       = cx + 'px';
+    el.style.top        = cy + 'px';
+
+    const angle  = (360 / SPARKS.length) * i + Math.random() * 15;
+    const dist   = 70 + Math.random() * 110;
+    const tx = Math.cos(angle * Math.PI / 180) * dist;
+    const ty = Math.sin(angle * Math.PI / 180) * dist - 50;
+    const tr = ((Math.random() - 0.5) * 540) + 'deg';
+    const dur = (0.75 + Math.random() * 0.35) + 's';
+
+    el.style.setProperty('--tx',  tx  + 'px');
+    el.style.setProperty('--ty',  ty  + 'px');
+    el.style.setProperty('--tr',  tr);
+    el.style.setProperty('--dur', dur);
+    el.style.animationDelay = (i * 0.042) + 's';
+
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 1200);
+  });
+}
+
+function sparkleFromFrame() {
+  const frame = document.getElementById('animal-frame');
+  const r = frame.getBoundingClientRect();
+  launchSparkles(r.left + r.width / 2, r.top + r.height / 2);
+}
+
+// ============================================================
+// クイズロジック
+// ============================================================
+let questions = [], current = 0, score = 0, answered = false;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function startQuiz() {
+  questions = shuffle(ALL_QUESTIONS); // 10問すべて使う
+  current = 0; score = 0;
+  document.getElementById('result-screen').style.display = 'none';
+  document.getElementById('quiz-screen').style.display  = 'flex';
+  showQuestion();
+}
+
+function loadAnimalPhoto(q) {
+  const img   = document.getElementById('animal-img');
+  const fb    = document.getElementById('animal-fallback');
+  const frame = document.getElementById('animal-frame');
+
+  img.alt = q.choices[q.answer];
+
+  // 複数URLを new Image() でバックグラウンド先読みし、
+  // 読み込み完了の瞬間だけ表示を切り替える。
+  // 読み込み中は前の写真（または初回は空フレーム）をそのまま表示。
+  const photos = Array.isArray(q.photo) ? q.photo : [q.photo];
+  let idx = 0;
+
+  function tryNext() {
+    if (idx >= photos.length) {
+      // 全URL失敗 → エモジにフォールバック
+      img.style.display = 'none';
+      fb.textContent    = q.emoji;
+      fb.style.display  = 'block';
+      triggerFrameAnim();
+      return;
+    }
+    const url = photos[idx++];
+    const preload = new Image();
+    preload.onload = () => {
+      // 先読み完了 → 即座にスワップ（キャッシュ済みなので一瞬で反映）
+      img.src           = url;
+      img.style.display = 'block';
+      fb.style.display  = 'none';
+      triggerFrameAnim();
+    };
+    preload.onerror = () => tryNext();
+    preload.src = url;
+  }
+
+  function triggerFrameAnim() {
+    frame.style.animation = 'none';
+    void frame.offsetWidth;
+    frame.style.animation = '';
+  }
+
+  tryNext();
+}
+
+function showQuestion() {
+  answered = false;
+  clearTimeout(window._nextTimer);
+  clearInterval(window._countTimer);
+
+  const q = questions[current];
+
+  // プログレス
+  document.getElementById('progress-bar').style.width =
+    (current / questions.length * 100) + '%';
+  document.getElementById('question-num').textContent =
+    `もんだい ${current + 1} / ${questions.length}`;
+
+  loadAnimalPhoto(q);
+  document.getElementById('question-text').textContent = q.question;
+
+  // 選択肢をシャッフル
+  const idx  = shuffle([0, 1, 2]);
+  const btns = ['btn0','btn1','btn2'].map(id => document.getElementById(id));
+  btns.forEach((btn, pos) => {
+    const ci = idx[pos];
+    btn.textContent       = q.choices[ci];
+    btn.dataset.choiceIdx = ci;
+    btn.disabled          = false;
+    btn.className         = 'choice-btn';
+  });
+
+  document.getElementById('feedback').textContent  = '';
+  document.getElementById('feedback').className    = '';
+  document.getElementById('next-countdown').textContent = '';
+}
+
+function handleAnswer(choiceIdx) {
+  if (answered) return;
+  answered = true;
+
+  const q       = questions[current];
+  const correct = parseInt(choiceIdx) === q.answer;
+  const btns    = ['btn0','btn1','btn2'].map(id => document.getElementById(id));
+
+  btns.forEach(btn => {
+    btn.disabled = true;
+    if (parseInt(btn.dataset.choiceIdx) === q.answer)
+      btn.classList.add('correct');
+  });
+
+  const fb = document.getElementById('feedback');
+
+  if (correct) {
+    score++;
+    fb.textContent = '⭕ すごい！ せいかい！';
+    fb.className   = 'correct';
+    playPinPon();
+    // キラキラ
+    sparkleFromFrame();
+    setTimeout(sparkleFromFrame, 220);
+  } else {
+    fb.textContent = '❌ ざんねん！ ちがったよ〜';
+    fb.className   = 'wrong';
+    playBuBu();
+  }
+
+  // 2秒後に自動で次へ
+  let rem = 2;
+  const cd = document.getElementById('next-countdown');
+  cd.textContent = `つぎのもんだいへ… ${rem}`;
+  window._countTimer = setInterval(() => {
+    rem--;
+    if (rem > 0) cd.textContent = `つぎのもんだいへ… ${rem}`;
+  }, 1000);
+  window._nextTimer = setTimeout(() => {
+    clearInterval(window._countTimer);
+    nextQuestion();
+  }, 2000);
+}
+
+function nextQuestion() {
+  current++;
+  if (current >= questions.length) showResult();
+  else showQuestion();
+}
+
+function showResult() {
+  // プログレス100%
+  document.getElementById('progress-bar').style.width = '100%';
+  document.getElementById('quiz-screen').style.display = 'none';
+
+  const rs = document.getElementById('result-screen');
+  rs.style.display = 'flex';
+
+  const pct = score / questions.length;
+  let trophy, subtitle;
+  if      (pct === 1)   { trophy = '🏆'; subtitle = 'ぜんぶ せいかい！ さいこう！！'; }
+  else if (pct >= 0.7)  { trophy = '🌟'; subtitle = 'とっても よくできました！'; }
+  else if (pct >= 0.4)  { trophy = '😊'; subtitle = 'がんばったね！'; }
+  else                  { trophy = '💪'; subtitle = 'またちょうせんしよう！'; }
+
+  document.getElementById('result-emoji').textContent    = trophy;
+  document.getElementById('result-subtitle').textContent = subtitle;
+  document.getElementById('result-stars').innerHTML =
+    Array.from({length: score}, () => '<span>⭐</span>').join('') +
+    Array.from({length: questions.length - score}, () => '<span>☆</span>').join('');
+  document.getElementById('result-score').textContent    =
+    `${questions.length}もんちゅう ${score}もん せいかい！`;
+
+  // 音 + キラキラ
+  playFinale();
+  const cx = window.innerWidth  / 2;
+  const cy = window.innerHeight / 2;
+  setTimeout(() => launchSparkles(cx, cy), 150);
+  setTimeout(() => launchSparkles(cx - 80, cy - 60), 500);
+  setTimeout(() => launchSparkles(cx + 80, cy - 60), 750);
+}
+
+// ============================================================
+// イベント
+// ============================================================
+['btn0','btn1','btn2'].forEach(id => {
+  document.getElementById(id).addEventListener('click', function () {
+    handleAnswer(this.dataset.choiceIdx);
+  });
+});
+
+document.getElementById('retry-btn').addEventListener('click', startQuiz);
+
+// スタート
+startQuiz();
+</script>
+</body>
+</html>

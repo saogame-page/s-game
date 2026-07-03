@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🔷 かたちあわせ</title>
+  <link href="https://fonts.googleapis.com/css2?family=Kosugi+Maru&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      height: 100dvh; overflow: hidden;
+      font-family: 'Kosugi Maru', sans-serif;
+    }
+
+    /* ── 背景 ── */
+    .bg {
+      position: fixed; inset: 0;
+      background: linear-gradient(180deg, #ffe0f0 0%, #fff0c8 40%, #e0f8e8 100%);
+    }
+
+    /* ── HUD ── */
+    .hud {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 20;
+      padding: 10px 14px; display: flex;
+      align-items: center; justify-content: space-between;
+    }
+    .chip {
+      background: rgba(255,255,255,0.88);
+      border-radius: 16px; padding: 6px 14px;
+      font-size: 1rem; color: #444;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    }
+    .home-link {
+      background: rgba(255,255,255,0.88); border-radius: 16px;
+      padding: 6px 14px; color: #666; font-size: 0.9rem; text-decoration: none;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+    }
+    #timer { transition: color 0.3s; }
+    #timer.danger { color: #e53935; animation: blink 0.5s step-start infinite; }
+    @keyframes blink { 50% { opacity: 0.3; } }
+
+    /* ── 落ちてくる形 ── */
+    .falling-shape {
+      position: fixed;
+      font-size: clamp(3rem, 10vw, 5rem);
+      pointer-events: none; z-index: 8;
+      transform: translateX(-50%);
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.18));
+      transition: opacity 0.2s;
+    }
+
+    /* ── スロット ── */
+    .slots {
+      position: fixed; bottom: 30px; left: 0; right: 0;
+      display: flex; justify-content: center; align-items: flex-end;
+      gap: clamp(8px, 2.5vw, 20px); z-index: 10; padding: 0 10px;
+    }
+    .slot {
+      position: relative;
+      width:  clamp(72px, 20vw, 110px);
+      height: clamp(80px, 22vw, 120px);
+      border-radius: 18px;
+      border: 4px dashed var(--color);
+      background: rgba(255,255,255,0.55);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      transition: transform 0.1s, background 0.15s, box-shadow 0.15s;
+      box-shadow: 0 5px 16px rgba(0,0,0,0.1);
+    }
+    .slot:active { transform: scale(0.93); }
+    .slot.correct-flash {
+      background: rgba(100,220,100,0.4) !important;
+      box-shadow: 0 0 0 5px rgba(60,200,60,0.5);
+      animation: slot-correct 0.4s ease-out;
+    }
+    .slot.wrong-flash {
+      animation: slot-wrong 0.3s ease-out;
+    }
+    @keyframes slot-correct {
+      0%   { transform: scale(1); }
+      40%  { transform: scale(1.15); }
+      100% { transform: scale(1); }
+    }
+    @keyframes slot-wrong {
+      0%,100% { transform: translateX(0); }
+      25%      { transform: translateX(-8px); }
+      75%      { transform: translateX(8px); }
+    }
+    .slot-emoji { font-size: clamp(2rem, 6vw, 3rem); pointer-events: none; }
+    .slot-label { font-size: clamp(0.75rem, 2vw, 0.95rem); color: #666; pointer-events: none; margin-top: 2px; }
+
+    /* エフェクト */
+    .fx-pop {
+      position: fixed; pointer-events: none; z-index: 30;
+      font-size: 2rem;
+      animation: fx-pop 0.7s ease-out forwards;
+    }
+    @keyframes fx-pop {
+      0%   { transform: translate(-50%,-50%) scale(0.3); opacity: 1; }
+      50%  { transform: translate(-50%,-50%) scale(1.4); opacity: 1; }
+      100% { transform: translate(-50%,-50%) scale(0.9); opacity: 0; }
+    }
+
+    /* ── オーバーレイ ── */
+    .overlay {
+      position: fixed; inset: 0; z-index: 50;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(0,0,0,0.38); backdrop-filter: blur(4px);
+    }
+    .overlay.hidden { display: none; }
+    .card {
+      background: #fff; border-radius: 28px;
+      padding: 28px 22px 22px; width: 88%; max-width: 340px;
+      text-align: center; box-shadow: 0 14px 44px rgba(0,0,0,0.22);
+      animation: card-in 0.36s cubic-bezier(0.18,1.5,0.5,1);
+    }
+    @keyframes card-in { from { transform: scale(0.35); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .card-emoji  { font-size: 3rem; }
+    .card-title  { font-size: 1.8rem; margin: 6px 0; }
+    .card-score  { font-size: 2.2rem; color: #e67e22; font-weight: bold; margin: 10px 0 20px; }
+    .btn {
+      display: block; width: 100%; padding: 13px;
+      margin-bottom: 10px; border: none; border-radius: 50px;
+      font-family: 'Kosugi Maru', sans-serif; font-size: 1.05rem; font-weight: bold;
+      cursor: pointer; touch-action: manipulation; text-decoration: none; text-align: center;
+    }
+    .btn-orange { background: linear-gradient(160deg,#ff9a3c,#e06010); color:#fff;
+                  box-shadow: 0 5px 0 #a03a00; }
+    .btn-orange:active { box-shadow: 0 2px 0 #a03a00; transform: translateY(3px); }
+    .btn-gray   { background: linear-gradient(160deg,#ccc,#999); color:#fff;
+                  box-shadow: 0 5px 0 #666; }
+  </style>
+</head>
+<body>
+<div class="bg"></div>
+
+<div class="hud">
+  <div class="chip">🔷 かたちあわせ</div>
+  <div class="chip">🏆 <span id="score">0</span></div>
+  <div class="chip">⏱ <span id="timer">40</span></div>
+  <a class="home-link" href="../../index.html">← もどる</a>
+</div>
+
+<div id="field"></div>
+
+<div class="slots" id="slots"></div>
+
+<!-- スタート -->
+<div class="overlay" id="ov-start">
+  <div class="card">
+    <div class="card-emoji">🔷🔶🔸</div>
+    <div class="card-title">かたちあわせ</div>
+    <p style="color:#777;font-size:0.95rem;margin:8px 0 18px;line-height:1.7">
+      おちてくる かたちを みて<br>おなじ かたちの ボタンを おそう！
+    </p>
+    <button class="btn btn-orange" id="btn-start">スタート！🎉</button>
+    <a class="btn btn-gray" href="../../index.html">← トップにもどる</a>
+  </div>
+</div>
+
+<!-- リザルト -->
+<div class="overlay hidden" id="ov-result">
+  <div class="card">
+    <div class="card-emoji" id="r-emoji">🎉</div>
+    <div class="card-title" id="r-title">すごい！</div>
+    <p style="color:#999;font-size:0.9rem">あわせた かたち</p>
+    <div class="card-score">🔷 <span id="r-score">0</span> こ！</div>
+    <button class="btn btn-orange" id="btn-retry">もういちど！</button>
+    <a class="btn btn-gray" href="../../index.html">← トップにもどる</a>
+  </div>
+</div>
+
+<script>
+  // ============================================================
+  //  形データ ── 絵文字・色・名前を変更できます
+  // ============================================================
+  const SHAPES = [
+    { id:'circle',   emoji:'🔵', label:'まる',     color:'#3b82f6' },
+    { id:'triangle', emoji:'🔺', label:'さんかく', color:'#ef4444' },
+    { id:'square',   emoji:'🟨', label:'しかく',   color:'#eab308' },
+    { id:'heart',    emoji:'❤️', label:'ハート',   color:'#ec4899' },
+  ];
+
+  const TOTAL_SEC  = 40;
+  let score = 0, timeLeft = TOTAL_SEC, gameActive = false;
+  let currentShapeId = null, shapeEl = null, shapeY = 0, shapeX = 0, rafId = null, clockTimer = null, spawnTimer = null;
+  let audioCtx = null;
+
+  function initAudio() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+
+  function playOK() {
+    if (!audioCtx) return;
+    [[0,523],[0.1,659],[0.2,784]].forEach(([t,f]) => {
+      const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+      o.connect(g); g.connect(audioCtx.destination); o.type='sine'; o.frequency.value=f;
+      g.gain.setValueAtTime(0.2, audioCtx.currentTime+t);
+      g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime+t+0.18);
+      o.start(audioCtx.currentTime+t); o.stop(audioCtx.currentTime+t+0.19);
+    });
+  }
+  function playNG() {
+    if (!audioCtx) return;
+    const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+    o.connect(g); g.connect(audioCtx.destination); o.type='sawtooth';
+    o.frequency.setValueAtTime(300, audioCtx.currentTime);
+    o.frequency.exponentialRampToValueAtTime(130, audioCtx.currentTime+0.25);
+    g.gain.setValueAtTime(0.14, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime+0.28);
+    o.start(); o.stop(audioCtx.currentTime+0.3);
+  }
+
+  // ── スロット生成 ──
+  const slotsEl = document.getElementById('slots');
+  SHAPES.forEach(sh => {
+    const el = document.createElement('div');
+    el.className = 'slot';
+    el.style.setProperty('--color', sh.color);
+    el.dataset.id = sh.id;
+    el.innerHTML = `<div class="slot-emoji">${sh.emoji}</div><div class="slot-label">${sh.label}</div>`;
+    el.addEventListener('pointerdown', e => { e.preventDefault(); onSlotTap(sh.id, el); });
+    slotsEl.appendChild(el);
+  });
+
+  function onSlotTap(id, el) {
+    if (!gameActive || !currentShapeId) return;
+    if (id === currentShapeId) {
+      score++;
+      document.getElementById('score').textContent = score;
+      el.classList.add('correct-flash');
+      setTimeout(() => el.classList.remove('correct-flash'), 420);
+      playOK();
+      showFX('✨', el.getBoundingClientRect());
+      nextShape();
+    } else {
+      el.classList.add('wrong-flash');
+      setTimeout(() => el.classList.remove('wrong-flash'), 320);
+      playNG();
+    }
+  }
+
+  function showFX(icon, rect) {
+    const e2 = document.createElement('div');
+    e2.className = 'fx-pop'; e2.textContent = icon;
+    e2.style.cssText = `left:${rect.left+rect.width/2}px; top:${rect.top}px;`;
+    document.body.appendChild(e2);
+    setTimeout(() => e2.remove(), 730);
+  }
+
+  // ── 形スポーン ──
+  function slotZone() { return window.innerHeight - 160; }
+  function topZone()  { return 80; }
+
+  function nextShape() {
+    if (shapeEl) shapeEl.remove();
+    const sh = SHAPES[Math.floor(Math.random() * SHAPES.length)];
+    currentShapeId = sh.id;
+    shapeX = 15 + Math.random() * 70;
+    shapeY = topZone();
+
+    shapeEl = document.createElement('div');
+    shapeEl.className = 'falling-shape';
+    shapeEl.textContent = sh.emoji;
+    shapeEl.style.left = shapeX + '%';
+    shapeEl.style.top  = shapeY + 'px';
+    document.getElementById('field').appendChild(shapeEl);
+  }
+
+  // ── rAF 落下 ──
+  function gameLoop() {
+    if (!gameActive) return;
+    if (shapeEl) {
+      const spd = 1.2 + (TOTAL_SEC - timeLeft) * 0.045;
+      shapeY += spd;
+      shapeEl.style.top = shapeY + 'px';
+      if (shapeY > slotZone()) {
+        // 落としてしまった → 次の形へ
+        shapeEl.style.opacity = '0';
+        setTimeout(nextShape, 200);
+      }
+    }
+    rafId = requestAnimationFrame(gameLoop);
+  }
+
+  // ── ゲームフロー ──
+  function startGame() {
+    score = 0; timeLeft = TOTAL_SEC; gameActive = true; currentShapeId = null;
+    document.getElementById('score').textContent = '0';
+    document.getElementById('timer').textContent = TOTAL_SEC;
+    document.getElementById('ov-start').classList.add('hidden');
+    document.getElementById('ov-result').classList.add('hidden');
+    document.getElementById('field').innerHTML = '';
+
+    clockTimer = setInterval(() => {
+      timeLeft--;
+      const t = document.getElementById('timer');
+      t.textContent = Math.max(0, timeLeft);
+      if (timeLeft <= 8) t.classList.add('danger'); else t.classList.remove('danger');
+      if (timeLeft <= 0) endGame();
+    }, 1000);
+
+    nextShape();
+    rafId = requestAnimationFrame(gameLoop);
+  }
+
+  function endGame() {
+    if (!gameActive) return;
+    gameActive = false;
+    clearInterval(clockTimer);
+    cancelAnimationFrame(rafId);
+    if (shapeEl) { shapeEl.remove(); shapeEl = null; }
+
+    const e = score >= 15 ? '🏆' : score >= 8 ? '🎉' : score >= 4 ? '😄' : '🌱';
+    const t = score >= 15 ? 'かんぺき！' : score >= 8 ? 'すごい！' : score >= 4 ? 'よくできた！' : 'がんばったね！';
+    document.getElementById('r-emoji').textContent = e;
+    document.getElementById('r-title').textContent = t;
+    document.getElementById('r-score').textContent = score;
+    document.getElementById('ov-result').classList.remove('hidden');
+  }
+
+  document.getElementById('btn-start').addEventListener('click', () => { initAudio(); startGame(); });
+  document.getElementById('btn-retry').addEventListener('click', () => { initAudio(); startGame(); });
+</script>
+</body>
+</html>
