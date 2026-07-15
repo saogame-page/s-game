@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>サイトワード フラッシュカード - ちびっこミニゲームランド</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Kosugi+Maru&family=Baloo+2:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue:#4ecdc4;
+    --blue-dark:#2f9a92;
+    --orange:#ff9f43;
+    --orange-dark:#c96f14;
+    --red:#ff6b6b;
+    --red-dark:#c23c3c;
+    --purple:#a78bfa;
+    --purple-dark:#7c5cd6;
+    --ink:#3a2e1e;
+    --bg-top:#eaf9ff;
+    --bg-bottom:#fff6e0;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Kosugi Maru','Baloo 2',sans-serif;
+    min-height:100vh;
+    background:linear-gradient(180deg,var(--bg-top),var(--bg-bottom));
+    color:var(--ink);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    overscroll-behavior:none;
+    -webkit-tap-highlight-color:transparent;
+    user-select:none;
+  }
+  .app{
+    width:100%;
+    max-width:520px;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    padding:16px;
+    position:relative;
+  }
+  .screen{ display:none; flex:1; flex-direction:column; }
+  .screen.active{ display:flex; }
+
+  .topbar{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .back-link{
+    text-decoration:none; color:var(--ink); background:#fff;
+    border-radius:999px; padding:8px 16px; font-weight:700; font-size:0.85rem;
+    box-shadow:0 3px 0 rgba(0,0,0,0.12);
+  }
+
+  /* ---- Start screen ---- */
+  .start-screen{ align-items:center; text-align:center; justify-content:center; }
+  .start-emoji{ font-size:4rem; margin-bottom:6px; }
+  .start-title{
+    font-family:'Baloo 2',sans-serif; font-size:1.8rem; font-weight:800;
+    color:#1f8f86; text-shadow:2px 2px 0 #fff; margin-bottom:6px;
+  }
+  .start-sub{ font-size:0.95rem; opacity:0.8; margin-bottom:30px; line-height:1.6; }
+  .big-btn{
+    font-family:'Baloo 2',sans-serif; font-size:1.25rem; font-weight:700;
+    padding:18px 30px; border:none; border-radius:24px; cursor:pointer; color:#fff;
+    display:flex; align-items:center; justify-content:center; gap:10px;
+    transition:transform 0.08s;
+  }
+  .big-btn:active{ transform:scale(0.94) translateY(3px); }
+  .btn-blue{ background:var(--blue); box-shadow:0 6px 0 var(--blue-dark); }
+  .btn-orange{ background:var(--orange); box-shadow:0 6px 0 var(--orange-dark); }
+  .btn-red{ background:var(--red); box-shadow:0 6px 0 var(--red-dark); }
+  .btn-purple{ background:var(--purple); box-shadow:0 6px 0 var(--purple-dark); }
+
+  /* ---- Flash screen ---- */
+  .flash-screen{ align-items:center; flex:1; }
+  .progress-label{
+    font-family:'Baloo 2',sans-serif; font-weight:800; font-size:1.05rem;
+    color:#1f8f86; margin:6px 0 22px; text-align:center;
+  }
+
+  .flip-card-wrap{ perspective:1200px; width:100%; max-width:320px; margin:0 auto; flex:1; display:flex; align-items:center; }
+  .flip-card{ width:100%; height:230px; position:relative; }
+  .flip-card-inner{
+    position:relative; width:100%; height:100%;
+    transition:transform 0.6s cubic-bezier(0.4,0.2,0.2,1);
+    transform-style:preserve-3d;
+  }
+  .flip-card-inner.flipped{ transform:rotateY(180deg); }
+
+  .flip-card-front, .flip-card-back{
+    position:absolute; inset:0; backface-visibility:hidden;
+    -webkit-backface-visibility:hidden;
+    border-radius:28px; display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    padding:20px;
+    box-shadow:0 10px 0 rgba(0,0,0,0.10);
+  }
+  .flip-card-front{
+    background:linear-gradient(160deg,#ffffff,#e8fbfa);
+    border:4px solid var(--blue);
+  }
+  .flip-card-back{
+    background:linear-gradient(160deg,#fff8e0,#ffedc2);
+    border:4px solid var(--orange);
+    transform:rotateY(180deg);
+  }
+  .card-badge{
+    font-family:'Baloo 2',sans-serif; font-weight:700; font-size:0.72rem;
+    letter-spacing:1px; padding:4px 12px; border-radius:999px;
+    margin-bottom:14px;
+  }
+  .flip-card-front .card-badge{ background:var(--blue); color:#fff; }
+  .flip-card-back .card-badge{ background:var(--orange); color:#fff; }
+
+  #cardEn{
+    font-family:'Baloo 2',sans-serif; font-weight:800;
+    font-size:clamp(2.2rem, 12vw, 3.4rem);
+    color:#1f8f86; text-align:center; word-break:break-word; line-height:1.1;
+  }
+  #cardJa{
+    font-family:'Kosugi Maru',sans-serif; font-weight:700;
+    font-size:clamp(1.8rem, 9vw, 2.6rem);
+    color:#a85b00; text-align:center; word-break:break-word; line-height:1.3;
+  }
+
+  .controls{
+    display:flex; gap:10px; width:100%; max-width:400px; margin:22px auto 4px;
+  }
+  .ctrl-btn{
+    flex:1; font-family:'Baloo 2',sans-serif; font-weight:700; font-size:0.85rem;
+    padding:14px 6px; border:none; border-radius:16px; cursor:pointer; color:#fff;
+    display:flex; flex-direction:column; align-items:center; gap:2px;
+    transition:transform 0.08s;
+  }
+  .ctrl-btn:active{ transform:scale(0.95) translateY(2px); }
+  #btnPause{ background:var(--red); box-shadow:0 4px 0 var(--red-dark); }
+  #btnRepeat{ background:var(--purple); box-shadow:0 4px 0 var(--purple-dark); }
+  #btnNext{ background:var(--blue); box-shadow:0 4px 0 var(--blue-dark); }
+
+  /* ---- Result screen ---- */
+  .result-screen{ align-items:center; text-align:center; justify-content:center; }
+  .result-emoji{ font-size:4rem; margin-bottom:6px; }
+  .result-title{
+    font-family:'Baloo 2',sans-serif; font-size:2.2rem; font-weight:800;
+    color:#1f8f86; text-shadow:2px 2px 0 #fff; margin-bottom:26px;
+  }
+  .result-buttons{ display:flex; flex-direction:column; gap:14px; width:100%; max-width:300px; }
+
+  @media (max-width:380px){
+    .flip-card{ height:200px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <div class="topbar">
+    <a class="back-link" href="../../index.html">◀ もどる</a>
+  </div>
+
+  <!-- ============ START SCREEN ============ -->
+  <section class="screen start-screen active" id="screen-start">
+    <div class="start-emoji">🗂️✨</div>
+    <div class="start-title">サイトワード<br>フラッシュカード</div>
+    <p class="start-sub">えいごの カードが つぎつぎ でてくるよ！<br>みて・きいて おぼえよう👀🔊</p>
+    <button class="big-btn btn-blue" id="btnStartGame">▶ スタート</button>
+  </section>
+
+  <!-- ============ FLASH SCREEN ============ -->
+  <section class="screen flash-screen" id="screen-flash">
+    <div class="progress-label" id="progressLabel">1 / 10</div>
+
+    <div class="flip-card-wrap">
+      <div class="flip-card">
+        <div class="flip-card-inner" id="flipCardInner">
+          <div class="flip-card-front">
+            <span class="card-badge">ENGLISH</span>
+            <span id="cardEn">I</span>
+          </div>
+          <div class="flip-card-back">
+            <span class="card-badge">にほんご</span>
+            <span id="cardJa">わたし</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button type="button" class="ctrl-btn" id="btnPause">⏸<span>いったん<br>止める</span></button>
+      <button type="button" class="ctrl-btn" id="btnRepeat">🔁<span>もう<br>いちど</span></button>
+      <button type="button" class="ctrl-btn" id="btnNext">⏭<span>つぎへ</span></button>
+    </div>
+  </section>
+
+  <!-- ============ RESULT SCREEN ============ -->
+  <section class="screen result-screen" id="screen-result">
+    <div class="result-emoji">🎉</div>
+    <div class="result-title">おわり！</div>
+    <div class="result-buttons">
+      <button class="big-btn btn-blue" id="btnRetrySame">🔁 もういちど</button>
+      <button class="big-btn btn-orange" id="btnRetryNew">🔀 べつの10まい</button>
+      <button class="big-btn btn-purple" id="btnToTop">🏠 トップにもどる</button>
+    </div>
+  </section>
+
+</div>
+
+<script src="data/sightwords.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  const CARDS_PER_SET = 10;
+  const FRONT_HOLD_MS = 1500;   // 表面を見せてから裏返るまでの時間
+  const BACK_HOLD_MS  = 1500;   // 裏返ってから次のカードへ進むまでの時間
+
+  // ---------- Speech (SpeechSynthesis API, no additional cost) ----------
+  function speakEnglish(text){
+    if(!("speechSynthesis" in window)) return;
+    try{
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = "en-US";
+      u.rate = 0.8;
+      u.pitch = 1.05;
+      window.speechSynthesis.speak(u);
+    }catch(e){}
+  }
+  function stopSpeech(){
+    if("speechSynthesis" in window){
+      try{ window.speechSynthesis.cancel(); }catch(e){}
+    }
+  }
+
+  // ---------- Helpers ----------
+  function shuffle(arr){
+    const a = arr.slice();
+    for(let i=a.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [a[i],a[j]]=[a[j],a[i]];
+    }
+    return a;
+  }
+  function pickRandomSet(){
+    return shuffle(SIGHT_WORDS).slice(0, Math.min(CARDS_PER_SET, SIGHT_WORDS.length));
+  }
+
+  // ---------- Screen switching ----------
+  const screens = {
+    start: document.getElementById("screen-start"),
+    flash: document.getElementById("screen-flash"),
+    result: document.getElementById("screen-result"),
+  };
+  function showScreen(name){
+    Object.values(screens).forEach(s=>s.classList.remove("active"));
+    screens[name].classList.add("active");
+    window.scrollTo(0,0);
+  }
+
+  // ---------- Game state ----------
+  let deck = [];
+  let idx = 0;
+  let side = "front";      // "front" | "back"
+  let paused = false;
+  let timer = null;
+
+  const flipInner   = document.getElementById("flipCardInner");
+  const cardEnEl    = document.getElementById("cardEn");
+  const cardJaEl    = document.getElementById("cardJa");
+  const progressEl  = document.getElementById("progressLabel");
+  const btnPause    = document.getElementById("btnPause");
+
+  function clearTimer(){
+    if(timer){ clearTimeout(timer); timer = null; }
+  }
+
+  function setPausedUI(isPaused){
+    paused = isPaused;
+    btnPause.innerHTML = isPaused
+      ? "▶<span>さいかい<br>する</span>"
+      : "⏸<span>いったん<br>止める</span>";
+  }
+
+  function updateProgress(){
+    progressEl.textContent = `${idx+1} / ${deck.length}`;
+  }
+
+  // 表面を表示 → 発音 → (一時停止中でなければ) 裏返るタイマーをセット
+  function showFront(i){
+    clearTimer();
+    side = "front";
+    const w = deck[i];
+    updateProgress();
+    cardEnEl.textContent = w.en;
+    cardJaEl.textContent = w.ja;
+    flipInner.classList.remove("flipped");
+    speakEnglish(w.en);
+    if(!paused){
+      timer = setTimeout(()=> showBack(i), FRONT_HOLD_MS);
+    }
+  }
+
+  // 裏面（日本語）を表示 → (一時停止中でなければ) 次のカードへ進むタイマーをセット
+  function showBack(i){
+    clearTimer();
+    side = "back";
+    flipInner.classList.add("flipped");
+    if(!paused){
+      timer = setTimeout(()=> goNext(i), BACK_HOLD_MS);
+    }
+  }
+
+  function goNext(i){
+    clearTimer();
+    const next = i + 1;
+    if(next >= deck.length){
+      showResult();
+      return;
+    }
+    idx = next;
+    showFront(idx);
+  }
+
+  function startSet(newDeck){
+    deck = newDeck;
+    idx = 0;
+    setPausedUI(false);
+    showScreen("flash");
+    showFront(idx);
+  }
+
+  function showResult(){
+    clearTimer();
+    stopSpeech();
+    showScreen("result");
+  }
+
+  // ---------- Controls ----------
+  // いったん止める／さいかいする（自動進行と音声をトグル）
+  btnPause.addEventListener("click", ()=>{
+    if(!paused){
+      clearTimer();
+      stopSpeech();
+      setPausedUI(true);
+    }else{
+      setPausedUI(false);
+      // 今表示している面から、あらためて待ち時間をセットして再開する
+      if(side === "front"){
+        timer = setTimeout(()=> showBack(idx), FRONT_HOLD_MS);
+      }else{
+        timer = setTimeout(()=> goNext(idx), BACK_HOLD_MS);
+      }
+    }
+  });
+
+  // もういちど（今のカードを表面からやり直す。自動進行も再開する）
+  document.getElementById("btnRepeat").addEventListener("click", ()=>{
+    setPausedUI(false);
+    showFront(idx);
+  });
+
+  // つぎへ（待ち時間を省略して次のカードへ。自動進行も再開する）
+  document.getElementById("btnNext").addEventListener("click", ()=>{
+    setPausedUI(false);
+    goNext(idx);
+  });
+
+  // ---------- Start / result screens ----------
+  document.getElementById("btnStartGame").addEventListener("click", ()=>{
+    // iPhone/iPad Safari 対策：ユーザー操作(タップ)の直後に発音を開始する
+    startSet(pickRandomSet());
+  });
+  document.getElementById("btnRetrySame").addEventListener("click", ()=>{
+    startSet(deck);
+  });
+  document.getElementById("btnRetryNew").addEventListener("click", ()=>{
+    startSet(pickRandomSet());
+  });
+  document.getElementById("btnToTop").addEventListener("click", ()=>{
+    window.location.href = "../../index.html";
+  });
+
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>✏️ かんじぼうけんクイズ２ねんせい | ちびっこミニゲームランド</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Kosugi+Maru&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Kosugi Maru', 'Hiragino Maru Gothic ProN', 'BIZ UDGothic', sans-serif;
+  min-height: 100vh;
+  background: linear-gradient(160deg, #e8f8ff 0%, #f0ffe8 50%, #fff8e8 100%);
+  background-attachment: fixed;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 12px 48px;
+  overflow-x: hidden;
+}
+
+/* ── もどるボタン ── */
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: bold;
+  color: #555;
+  background: rgba(255,255,255,0.85);
+  border: 2px solid #ddd;
+  border-radius: 20px;
+  padding: 8px 16px;
+  text-decoration: none;
+  margin-bottom: 10px;
+  align-self: flex-start;
+  transition: transform 0.15s ease, background 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.back-btn:hover { background: #fff; transform: translateX(-3px); }
+
+/* ── ヘッダー ── */
+.game-header {
+  text-align: center;
+  margin-bottom: 14px;
+}
+.game-header h1 {
+  font-size: clamp(1.4rem, 5vw, 2rem);
+  color: #2d6a2d;
+  text-shadow: 2px 3px 0 #c8f0c8;
+  letter-spacing: 2px;
+}
+.game-header .subtitle {
+  font-size: 0.88rem;
+  color: #888;
+  margin-top: 4px;
+}
+
+/* ── 全体ラッパー ── */
+#wrapper {
+  width: 100%;
+  max-width: 540px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ─────────────────────────────
+   冒険マップカード
+───────────────────────────── */
+.map-card {
+  background: rgba(255,255,255,0.90);
+  border-radius: 24px;
+  padding: 14px 14px 10px;
+  box-shadow: 0 4px 20px rgba(60,140,60,0.12), 0 0 0 3px #c8f0b0;
+}
+
+.map-title {
+  font-size: 0.8rem;
+  color: #888;
+  text-align: center;
+  margin-bottom: 8px;
+  letter-spacing: 1px;
+}
+
+.map-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+}
+.map-row::-webkit-scrollbar { display: none; }
+
+.map-endpoint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  font-size: 1.4rem;
+  line-height: 1;
+}
+.map-endpoint span {
+  font-size: 0.6rem;
+  color: #999;
+  white-space: nowrap;
+}
+
+.map-path {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex: 1;
+  justify-content: center;
+}
+
+/* ──  コネクターライン ── */
+.map-connector {
+  flex: 1;
+  height: 3px;
+  background: #ddd;
+  border-radius: 2px;
+  min-width: 4px;
+  max-width: 10px;
+  flex-shrink: 1;
+}
+.map-connector.passed { background: #4caf50; }
+
+/* ── ステップ丸 ── */
+.map-step {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: bold;
+  flex-shrink: 0;
+  transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  border: 2.5px solid rgba(255,255,255,0.9);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+  position: relative;
+}
+
+.map-step.future {
+  background: #e8e8e8;
+  color: #aaa;
+  font-size: 0.68rem;
+}
+.map-step.correct {
+  background: #4caf50;
+  color: white;
+  font-size: 1rem;
+  box-shadow: 0 0 0 3px rgba(76,175,80,0.25), 0 2px 6px rgba(0,0,0,0.12);
+}
+.map-step.wrong {
+  background: #ff7043;
+  color: white;
+  font-size: 0.9rem;
+  box-shadow: 0 0 0 3px rgba(255,112,67,0.25), 0 2px 6px rgba(0,0,0,0.12);
+}
+.map-step.fox {
+  background: #fff9c4;
+  font-size: 1.1rem;
+  border-color: #ffb300;
+  box-shadow: 0 0 0 4px rgba(255,179,0,0.3), 0 3px 10px rgba(0,0,0,0.15);
+  animation: fox-bounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes fox-bounce {
+  0%   { transform: scale(0.5) translateY(4px); }
+  60%  { transform: scale(1.2) translateY(-4px); }
+  100% { transform: scale(1) translateY(0); }
+}
+
+/* スコア表示（マップ下） */
+.map-score-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 0.82rem;
+  color: #666;
+}
+#mapScoreText { font-weight: bold; color: #4caf50; }
+
+/* ─────────────────────────────
+   クイズカード
+───────────────────────────── */
+.quiz-card {
+  background: rgba(255,255,255,0.93);
+  border-radius: 28px;
+  padding: 22px 18px 26px;
+  box-shadow: 0 0 0 3px #ffe0a0, 0 8px 32px rgba(200,140,0,0.10), 0 2px 12px rgba(0,0,0,0.07);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* 問題番号 */
+#questionNum {
+  font-size: 0.88rem;
+  color: #bbb;
+  margin-bottom: 8px;
+}
+
+/* ── 漢字表示 ── */
+.kanji-frame {
+  background: linear-gradient(145deg, #fff9e6, #fff3cc);
+  border-radius: 20px;
+  padding: 14px 24px;
+  box-shadow: 0 6px 0 #e6c800, 0 8px 24px rgba(200,160,0,0.15);
+  margin: 4px 0 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+
+#kanjiDisplay {
+  font-size: clamp(5rem, 18vw, 8rem);
+  font-weight: bold;
+  color: #2c2c2c;
+  line-height: 1;
+  letter-spacing: -2px;
+  animation: kanji-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes kanji-pop {
+  0%   { transform: scale(0.4) rotate(-8deg); opacity: 0; }
+  100% { transform: scale(1) rotate(0deg);    opacity: 1; }
+}
+
+.hint-text {
+  font-size: 0.82rem;
+  color: #999;
+  margin-bottom: 14px;
+}
+
+/* ── 三択ボタン ── */
+#choices {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  width: 100%;
+}
+
+.choice-btn {
+  font-family: inherit;
+  font-size: clamp(1.2rem, 4.5vw, 1.45rem);
+  font-weight: bold;
+  padding: 20px 16px;
+  border: none;
+  border-radius: 18px;
+  cursor: pointer;
+  width: 100%;
+  letter-spacing: 1px;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform  0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.12s ease;
+}
+
+.choice-btn:nth-child(1) {
+  background: linear-gradient(175deg, #ffe0b2, #ffb74d);
+  color: #7a3500;
+  box-shadow: 0 7px 0 #c86000, 0 9px 18px rgba(200,100,0,0.18);
+}
+.choice-btn:nth-child(2) {
+  background: linear-gradient(175deg, #c8e6c9, #81c784);
+  color: #1b4f1b;
+  box-shadow: 0 7px 0 #388e3c, 0 9px 18px rgba(60,140,60,0.18);
+}
+.choice-btn:nth-child(3) {
+  background: linear-gradient(175deg, #bbdefb, #64b5f6);
+  color: #0d2e5a;
+  box-shadow: 0 7px 0 #1565c0, 0 9px 18px rgba(30,90,200,0.18);
+}
+
+.choice-btn:hover:not(:disabled) { transform: translateY(-4px) scale(1.02); }
+.choice-btn:active:not(:disabled) {
+  transform: scale(0.94) translateY(5px) !important;
+  transition-duration: 0.07s;
+}
+.choice-btn:nth-child(1):active:not(:disabled) { box-shadow: 0 2px 0 #c86000; }
+.choice-btn:nth-child(2):active:not(:disabled) { box-shadow: 0 2px 0 #388e3c; }
+.choice-btn:nth-child(3):active:not(:disabled) { box-shadow: 0 2px 0 #1565c0; }
+.choice-btn:disabled { cursor: default; }
+
+/* せいかい/ふせいかい */
+.choice-btn.correct {
+  background: linear-gradient(175deg, #c8ffd0, #6fe87a) !important;
+  color: #005500 !important;
+  box-shadow: 0 0 0 5px #4caf50, 0 7px 0 #2e7d32 !important;
+  animation: btn-correct 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.choice-btn.wrong {
+  background: linear-gradient(175deg, #ffe0d8, #ffab90) !important;
+  color: #8a1500 !important;
+  box-shadow: 0 0 0 5px #ff5722, 0 7px 0 #c62828 !important;
+  animation: btn-wrong 0.42s ease;
+}
+
+@keyframes btn-correct {
+  0%   { transform: scale(1); }
+  45%  { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+@keyframes btn-wrong {
+  0%,100% { transform: translateX(0); }
+  20%  { transform: translateX(-10px); }
+  40%  { transform: translateX(10px); }
+  60%  { transform: translateX(-5px); }
+  80%  { transform: translateX(5px); }
+}
+
+/* フィードバック */
+#feedback {
+  font-size: 1.4rem;
+  font-weight: bold;
+  margin-top: 14px;
+  min-height: 1.8rem;
+  line-height: 1.4;
+}
+#feedback.correct { color: #2e7d32; }
+#feedback.wrong   { color: #c62828; }
+
+#nextCountdown {
+  font-size: 0.85rem;
+  color: #bbb;
+  margin-top: 8px;
+  min-height: 1.1em;
+}
+
+/* ─────────────────────────────
+   結果画面
+───────────────────────────── */
+#resultScreen {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+}
+
+.result-card {
+  background: rgba(255,255,255,0.95);
+  border-radius: 28px;
+  padding: 32px 24px 36px;
+  box-shadow: 0 0 0 3px #ffe0a0, 0 10px 40px rgba(200,140,0,0.12);
+  text-align: center;
+  width: 100%;
+  max-width: 540px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+#resultEmoji {
+  font-size: 5.5rem;
+  line-height: 1;
+  animation: kanji-pop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+#resultTitle {
+  font-size: clamp(1.6rem, 5vw, 2rem);
+  color: #2d6a2d;
+  text-shadow: 2px 3px 0 #c8f0c8;
+  letter-spacing: 2px;
+}
+#resultSubtitle { font-size: 1.05rem; color: #888; }
+
+.score-box {
+  background: #f0fff0;
+  border-radius: 18px;
+  padding: 14px 28px;
+  border: 2px solid #a8dfa8;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+#resultStars {
+  font-size: 2rem;
+  letter-spacing: 4px;
+  word-break: break-all;
+  line-height: 1.5;
+}
+#resultScore { font-size: 1.25rem; color: #444; }
+
+.result-map-label {
+  font-size: 0.85rem;
+  color: #999;
+}
+#resultMapDesc {
+  font-size: 1.1rem;
+  color: #2d6a2d;
+  font-weight: bold;
+}
+
+.result-btns { display: flex; flex-direction: column; gap: 12px; width: 100%; }
+
+#retryBtn {
+  font-family: inherit;
+  font-size: 1.25rem;
+  font-weight: bold;
+  background: linear-gradient(150deg, #66bb6a, #2e7d32);
+  color: white;
+  border: none;
+  border-radius: 18px;
+  padding: 20px 32px;
+  cursor: pointer;
+  box-shadow: 0 7px 0 #1b5e20, 0 9px 20px rgba(30,100,30,0.18);
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.12s;
+  letter-spacing: 1px;
+  -webkit-tap-highlight-color: transparent;
+}
+#retryBtn:hover  { transform: translateY(-4px); }
+#retryBtn:active { transform: translateY(5px); box-shadow: 0 2px 0 #1b5e20; }
+
+/* ── キラキラ ── */
+.sparkle-particle {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+  line-height: 1;
+  user-select: none;
+  animation: sparkle-fly var(--dur, 0.85s) ease-out forwards;
+}
+@keyframes sparkle-fly {
+  0%   { transform: translate(0,0) scale(0.2) rotate(0deg); opacity: 1; }
+  70%  { opacity: 1; }
+  100% { transform: translate(var(--tx),var(--ty)) scale(1.1) rotate(var(--tr)); opacity: 0; }
+}
+
+/* ── レスポンシブ ── */
+@media (max-width: 380px) {
+  .map-step { width: 26px; height: 26px; font-size: 0.62rem; }
+  .kanji-frame { padding: 10px 14px; }
+}
+@media (min-width: 640px) {
+  .map-step { width: 34px; height: 34px; font-size: 0.8rem; }
+  .map-step.fox, .map-step.correct, .map-step.wrong { font-size: 1.1rem; }
+}
+</style>
+</head>
+<body>
+
+<div id="wrapper">
+
+  <a class="back-btn" href="../../index.html">◀ もどる</a>
+
+  <header class="game-header">
+    <h1>✏️ かんじぼうけんクイズ</h1>
+    <p class="subtitle">２ねんせいのかんじをよんでみよう！</p>
+  </header>
+
+  <!-- ── クイズ画面 ── -->
+  <div id="quizScreen">
+
+    <!-- 冒険マップ -->
+    <div class="map-card">
+      <div class="map-title">⚔️ ぼうけんマップ ⚔️</div>
+      <div class="map-row">
+        <div class="map-endpoint">
+          <span>🏠</span><span>スタート</span>
+        </div>
+        <div class="map-path" id="mapPath">
+          <!-- JS で生成 -->
+        </div>
+        <div class="map-endpoint">
+          <span>🏆</span><span>ゴール</span>
+        </div>
+      </div>
+      <div class="map-score-row">
+        🦊 <span id="mapScoreText">まだはじまっていないよ</span>
+      </div>
+    </div>
+
+    <!-- クイズカード -->
+    <div class="quiz-card">
+      <div id="questionNum">もんだい 1 / 10</div>
+
+      <div class="kanji-frame">
+        <div id="kanjiDisplay">引</div>
+      </div>
+
+      <p class="hint-text">よみかたを えらんでね👆</p>
+
+      <div id="choices">
+        <button class="choice-btn" id="btn0"></button>
+        <button class="choice-btn" id="btn1"></button>
+        <button class="choice-btn" id="btn2"></button>
+      </div>
+
+      <div id="feedback"></div>
+      <div id="nextCountdown"></div>
+    </div>
+
+  </div><!-- /quizScreen -->
+
+  <!-- ── 結果画面 ── -->
+  <div id="resultScreen">
+    <div class="result-card">
+      <div id="resultEmoji">🏆</div>
+      <h2 id="resultTitle">よくできました！</h2>
+      <div id="resultSubtitle"></div>
+
+      <div class="score-box">
+        <div id="resultStars"></div>
+        <div id="resultScore"></div>
+        <div class="result-map-label">ぼうけんのきろく</div>
+        <div id="resultMapDesc"></div>
+      </div>
+
+      <div class="result-btns">
+        <button id="retryBtn">もういちどあそぶ 🔄</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /wrapper -->
+
+<script src="data/kanji.js"></script>
+<script>
+// ============================================================
+// 音（Web Audio API）
+// ============================================================
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx;
+function getAC() { if (!audioCtx) audioCtx = new AudioCtx(); return audioCtx; }
+
+function playPinPon() {
+  const ac = getAC();
+  const tone = (f, t, dur, vol = 0.42) => {
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = 'sine'; o.frequency.value = f;
+    o.connect(g); g.connect(ac.destination);
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    o.start(t); o.stop(t + dur + 0.05);
+  };
+  const t = ac.currentTime;
+  tone(880, t, 0.5); tone(660, t + 0.22, 0.65);
+}
+
+function playBuBu() {
+  const ac = getAC();
+  [0, 0.20].forEach(d => {
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = 'square'; o.frequency.value = 165;
+    o.connect(g); g.connect(ac.destination);
+    const t = ac.currentTime + d;
+    g.gain.setValueAtTime(0.28, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+    o.start(t); o.stop(t + 0.25);
+  });
+}
+
+function playFinale() {
+  const ac = getAC();
+  [523, 659, 784, 1047, 784, 1047, 1319].forEach((f, i) => {
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = 'sine'; o.frequency.value = f;
+    o.connect(g); g.connect(ac.destination);
+    const t = ac.currentTime + i * 0.13;
+    g.gain.setValueAtTime(0.26, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.28);
+    o.start(t); o.stop(t + 0.32);
+  });
+}
+
+// ============================================================
+// キラキラエフェクト
+// ============================================================
+const SPARKS = ['⭐','✨','🌟','💫','🎉','✨','⭐','🌟','💛','🎊'];
+
+function launchSparkles(cx, cy, count = SPARKS.length) {
+  SPARKS.slice(0, count).forEach((em, i) => {
+    const el = document.createElement('span');
+    el.className = 'sparkle-particle';
+    el.textContent = em;
+    el.style.fontSize = (1.0 + Math.random() * 1.4) + 'rem';
+    el.style.left = cx + 'px'; el.style.top = cy + 'px';
+    const angle = (360 / count) * i + Math.random() * 18;
+    const dist  = 80 + Math.random() * 120;
+    el.style.setProperty('--tx', (Math.cos(angle * Math.PI / 180) * dist) + 'px');
+    el.style.setProperty('--ty', (Math.sin(angle * Math.PI / 180) * dist - 60) + 'px');
+    el.style.setProperty('--tr', ((Math.random() - 0.5) * 540) + 'deg');
+    el.style.setProperty('--dur', (0.7 + Math.random() * 0.4) + 's');
+    el.style.animationDelay = (i * 0.04) + 's';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 1300);
+  });
+}
+
+function sparkleFromKanji() {
+  const kf = document.querySelector('.kanji-frame');
+  const r  = kf.getBoundingClientRect();
+  launchSparkles(r.left + r.width / 2, r.top + r.height / 2);
+}
+
+// ============================================================
+// ゲーム状態
+// ============================================================
+let questions = [], qIdx = 0, score = 0, answered = false;
+let mapResults = [];
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// ============================================================
+// マップ描画
+// ============================================================
+function buildMap() {
+  const path = document.getElementById('mapPath');
+  path.innerHTML = '';
+  for (let i = 0; i < 10; i++) {
+    if (i > 0) {
+      const conn = document.createElement('div');
+      conn.className = 'map-connector' + (i < score ? ' passed' : '');
+      path.appendChild(conn);
+    }
+    const step = document.createElement('div');
+    step.className = 'map-step';
+    step.id = 'mapStep' + i;
+    if (i < score) {
+      step.classList.add('correct');
+      step.textContent = '⭕';
+    } else if (mapResults[i] === 'wrong') {
+      step.classList.add('wrong');
+      step.textContent = '✕';
+    } else if (i === score && qIdx <= 10) {
+      step.classList.add('fox');
+      step.textContent = '🦊';
+    } else {
+      step.classList.add('future');
+      step.textContent = i + 1;
+    }
+    path.appendChild(step);
+  }
+}
+
+function updateMapScore() {
+  const el = document.getElementById('mapScoreText');
+  if (score === 0 && qIdx === 0) {
+    el.textContent = 'まだはじまっていないよ';
+  } else if (score === 10) {
+    el.textContent = '🏆 ゴールたっせい！ぜんもんせいかい！';
+    el.style.color = '#e65100';
+  } else {
+    el.textContent = `${score}ます すすんだよ！`;
+  }
+}
+
+// ============================================================
+// クイズ表示
+// ============================================================
+function startQuiz() {
+  questions  = shuffle(ALL_KANJI).slice(0, 10);
+  qIdx       = 0;
+  score      = 0;
+  mapResults = [];
+  answered   = false;
+
+  document.getElementById('quizScreen').style.display   = 'block';
+  document.getElementById('resultScreen').style.display = 'none';
+  document.getElementById('mapScoreText').style.color   = '#4caf50';
+
+  buildMap();
+  updateMapScore();
+  showQuestion();
+}
+
+function showQuestion() {
+  answered = false;
+  clearTimeout(window._nextTimer);
+  clearInterval(window._countTimer);
+
+  const q = questions[qIdx];
+
+  document.getElementById('questionNum').textContent = `もんだい ${qIdx + 1} / 10`;
+
+  const kd = document.getElementById('kanjiDisplay');
+  kd.style.animation = 'none';
+  void kd.offsetWidth;
+  kd.style.animation = '';
+  kd.textContent = q.k;
+
+  const opts = shuffle([
+    { text: q.r, correct: true },
+    { text: q.w[0], correct: false },
+    { text: q.w[1], correct: false },
+  ]);
+
+  const btns = ['btn0','btn1','btn2'].map(id => document.getElementById(id));
+  btns.forEach((btn, i) => {
+    btn.textContent       = opts[i].text;
+    btn.dataset.correct   = opts[i].correct;
+    btn.disabled          = false;
+    btn.className         = 'choice-btn';
+  });
+
+  document.getElementById('feedback').textContent  = '';
+  document.getElementById('feedback').className    = '';
+  document.getElementById('nextCountdown').textContent = '';
+}
+
+function handleAnswer(btn) {
+  if (answered) return;
+  answered = true;
+
+  const correct = btn.dataset.correct === 'true';
+  const btns    = ['btn0','btn1','btn2'].map(id => document.getElementById(id));
+
+  btns.forEach(b => {
+    b.disabled = true;
+    if (b.dataset.correct === 'true') b.classList.add('correct');
+  });
+
+  const fb = document.getElementById('feedback');
+
+  if (correct) {
+    score++;
+    mapResults[qIdx] = 'correct';
+    fb.textContent = '⭕ せいかい！すごいね！';
+    fb.className   = 'correct';
+    playPinPon();
+    sparkleFromKanji();
+    setTimeout(sparkleFromKanji, 200);
+  } else {
+    mapResults[qIdx] = 'wrong';
+    btn.classList.remove('correct');
+    btn.classList.add('wrong');
+    fb.textContent = `❌ ざんねん！「${questions[qIdx].r}」だよ`;
+    fb.className   = 'wrong';
+    playBuBu();
+  }
+
+  buildMap();
+  updateMapScore();
+
+  let rem = 2;
+  const cd = document.getElementById('nextCountdown');
+  cd.textContent = `つぎへ… ${rem}`;
+  window._countTimer = setInterval(() => {
+    rem--;
+    if (rem > 0) cd.textContent = `つぎへ… ${rem}`;
+  }, 1000);
+  window._nextTimer = setTimeout(() => {
+    clearInterval(window._countTimer);
+    qIdx++;
+    if (qIdx >= 10) showResult();
+    else showQuestion();
+  }, 2000);
+}
+
+// ============================================================
+// 結果表示
+// ============================================================
+function showResult() {
+  buildMap();
+  updateMapScore();
+
+  document.getElementById('quizScreen').style.display   = 'none';
+  document.getElementById('resultScreen').style.display = 'flex';
+
+  const pct = score / 10;
+  let trophy, title, subtitle;
+
+  if      (pct === 1.0) { trophy = '🏆'; title = 'まんてん！さいこう！！';   subtitle = 'ぜんもんせいかい！かんぺきだ！'; }
+  else if (pct >= 0.8)  { trophy = '🌟'; title = 'よくできました！';         subtitle = 'もうすこしでまんてんだよ！'; }
+  else if (pct >= 0.6)  { trophy = '😊'; title = 'がんばったね！';           subtitle = 'もっとれんしゅうしよう！'; }
+  else if (pct >= 0.4)  { trophy = '👍'; title = 'もうすこし！';             subtitle = 'またちょうせんしてみよう！'; }
+  else                   { trophy = '💪'; title = 'れんしゅうしよう！';       subtitle = 'なんどもやればかならずできる！'; }
+
+  document.getElementById('resultEmoji').textContent    = trophy;
+  document.getElementById('resultTitle').textContent    = title;
+  document.getElementById('resultSubtitle').textContent = subtitle;
+  document.getElementById('resultStars').textContent    = '⭐'.repeat(score) + '☆'.repeat(10 - score);
+  document.getElementById('resultScore').textContent    = `10もんちゅう ${score}もん せいかい！`;
+  document.getElementById('resultMapDesc').textContent  =
+    score === 10 ? 'ゴールたっせい！🏆' : `${score}ます すすんだよ！🦊`;
+
+  playFinale();
+  const cx = window.innerWidth / 2, cy = window.innerHeight * 0.4;
+  setTimeout(() => launchSparkles(cx, cy), 100);
+  if (score >= 7) {
+    setTimeout(() => launchSparkles(cx - 100, cy - 40), 450);
+    setTimeout(() => launchSparkles(cx + 100, cy - 40), 700);
+  }
+  if (score === 10) {
+    setTimeout(() => launchSparkles(cx, cy + 60), 1000);
+  }
+}
+
+// ============================================================
+// イベント
+// ============================================================
+['btn0','btn1','btn2'].forEach(id => {
+  document.getElementById(id).addEventListener('click', function() {
+    handleAnswer(this);
+  });
+});
+document.getElementById('retryBtn').addEventListener('click', startQuiz);
+
+startQuiz();
+</script>
+</body>
+</html>

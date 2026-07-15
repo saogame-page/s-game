@@ -15,6 +15,33 @@ const games = [
     url: "games/animal-quiz/index.html",
     available: true,
   },
+  {
+    id: "english-picture-quiz",
+    title: "English Picture Quiz",
+    emoji: "🐶",
+    tag: "クイズ ・ 4〜7さい",
+    desc: "えいごの3たくクイズにちょうせん！カードをあつめよう✨",
+    url: "games/english-picture-quiz/index.html",
+    available: true,
+  },
+  {
+    id: "kanji-grade2",
+    title: "小学2年生 漢字クイズ",
+    emoji: "✏️",
+    tag: "クイズ ・ 7〜9さい",
+    desc: "かんじのよみかたをあてよう！🦊キツネとぼうけんにでかけよう！",
+    url: "games/kanji-grade2/index.html",
+    available: true,
+  },
+  {
+    id: "sight-word-flashcards",
+    title: "サイトワード フラッシュカード",
+    emoji: "🗂️",
+    tag: "がくしゅう ・ 4〜7さい",
+    desc: "えいごのカードがつぎつぎでてくるよ！みて・きいておぼえよう👀🔊",
+    url: "games/sight-word-flashcards/index.html",
+    available: true,
+  },
   // 新しいゲームはここに追加
 ];
 

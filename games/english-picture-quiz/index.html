@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>English Picture Quiz - ちびっこミニゲームランド</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Kosugi+Maru&family=Baloo+2:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --card-yellow:#ffd23f;
+    --card-orange:#ff9f43;
+    --card-red:#ff6b6b;
+    --card-blue:#4ecdc4;
+    --card-purple:#a78bfa;
+    --ink:#3a2e1e;
+    --bg-top:#fff3d6;
+    --bg-bottom:#ffe0b2;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Kosugi Maru','Baloo 2',sans-serif;
+    min-height:100vh;
+    background:linear-gradient(180deg,var(--bg-top),var(--bg-bottom));
+    color:var(--ink);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    overscroll-behavior:none;
+    -webkit-tap-highlight-color:transparent;
+    user-select:none;
+  }
+  .app{
+    width:100%;
+    max-width:520px;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    padding:16px;
+    position:relative;
+  }
+  .screen{ display:none; flex:1; flex-direction:column; }
+  .screen.active{ display:flex; }
+
+  /* ---- Top bar ---- */
+  .topbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:10px;
+  }
+  .back-link{
+    text-decoration:none;
+    color:var(--ink);
+    background:#fff;
+    border-radius:999px;
+    padding:8px 16px;
+    font-weight:700;
+    font-size:0.85rem;
+    box-shadow:0 3px 0 rgba(0,0,0,0.12);
+  }
+
+  /* ---- Home screen ---- */
+  .home-screen{ align-items:center; text-align:center; padding-top:10px; }
+  .home-emoji{ font-size:4rem; margin-bottom:4px; filter:drop-shadow(0 4px 0 rgba(0,0,0,0.1)); }
+  .home-title{
+    font-family:'Baloo 2',sans-serif;
+    font-size:1.9rem;
+    font-weight:800;
+    margin:6px 0 2px;
+    color:#e85d04;
+    text-shadow:2px 2px 0 #fff;
+  }
+  .home-sub{ font-size:0.95rem; opacity:0.8; margin-bottom:24px; }
+  .home-buttons{ display:flex; flex-direction:column; gap:16px; width:100%; max-width:320px; }
+  .big-btn{
+    font-family:'Baloo 2',sans-serif;
+    font-size:1.25rem;
+    font-weight:700;
+    padding:18px 20px;
+    border:none;
+    border-radius:24px;
+    cursor:pointer;
+    color:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    transition:transform 0.08s;
+  }
+  .big-btn:active{ transform:scale(0.94) translateY(3px); }
+  .btn-start{ background:var(--card-red); box-shadow:0 6px 0 #c23c3c; }
+  .btn-collection{ background:var(--card-blue); box-shadow:0 6px 0 #2f9a92; }
+  .home-stats{
+    margin-top:26px;
+    background:rgba(255,255,255,0.7);
+    border-radius:18px;
+    padding:12px 20px;
+    font-size:0.9rem;
+    font-weight:700;
+  }
+
+  /* ---- Quiz screen ---- */
+  .progress-wrap{
+    background:#fff;
+    border-radius:999px;
+    height:16px;
+    overflow:hidden;
+    box-shadow:inset 0 2px 3px rgba(0,0,0,0.1);
+    margin-bottom:6px;
+  }
+  .progress-bar{
+    height:100%;
+    background:linear-gradient(90deg,var(--card-orange),var(--card-yellow));
+    border-radius:999px;
+    transition:width 0.35s ease;
+  }
+  .progress-label{ text-align:center; font-size:0.85rem; font-weight:700; margin-bottom:14px; }
+
+  .quiz-card{
+    background:#fff;
+    border-radius:28px;
+    padding:26px 18px;
+    box-shadow:0 8px 0 rgba(0,0,0,0.1);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    flex:1;
+  }
+  .quiz-word-frame{
+    width:100%;
+    border-radius:22px;
+    background:linear-gradient(135deg,#fff4d6,#ffe0b2);
+    border:4px solid var(--card-yellow);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:12px;
+    padding:22px 10px;
+    margin-bottom:16px;
+  }
+  .quiz-word{
+    font-family:'Baloo 2',sans-serif;
+    font-size:2.4rem;
+    font-weight:800;
+    color:#e85d04;
+    letter-spacing:1px;
+    word-break:break-word;
+    text-align:center;
+  }
+  .quiz-speak-btn{
+    background:rgba(255,255,255,0.8);
+    border:none;
+    border-radius:999px;
+    font-size:1.6rem;
+    line-height:1;
+    padding:10px 14px;
+    cursor:pointer;
+    box-shadow:0 3px 0 rgba(0,0,0,0.12);
+    flex-shrink:0;
+  }
+  .quiz-speak-btn:active{ transform:translateY(3px); box-shadow:none; }
+  .quiz-question{
+    font-family:'Kosugi Maru',sans-serif;
+    font-size:1.05rem;
+    font-weight:700;
+    color:var(--ink);
+    margin:2px 0 18px;
+    text-align:center;
+  }
+  .choices{ display:flex; flex-direction:column; gap:12px; width:100%; }
+  .choice-btn{
+    font-family:'Baloo 2',sans-serif;
+    font-size:1.1rem;
+    font-weight:700;
+    padding:14px 16px;
+    border:none;
+    border-radius:20px;
+    background:#fff8e8;
+    border:3px solid var(--card-orange);
+    color:var(--ink);
+    cursor:pointer;
+    box-shadow:0 5px 0 #e0a45a;
+    transition:transform 0.08s;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    width:100%;
+  }
+  .choice-btn:active{ transform:scale(0.97) translateY(3px); }
+  .choice-btn.correct{ background:#c8f7c5; border-color:#4caf50; box-shadow:0 5px 0 #3d8b40; }
+  .choice-btn.wrong{ background:#ffd1d1; border-color:#ff6b6b; box-shadow:0 5px 0 #c23c3c; }
+  .choice-btn.disabled{ pointer-events:none; opacity:0.85; }
+  .choice-word{ text-align:center; }
+
+  .feedback{
+    margin-top:16px;
+    text-align:center;
+    font-family:'Baloo 2',sans-serif;
+    font-weight:800;
+    font-size:1.3rem;
+    min-height:1.6em;
+  }
+  .feedback.correct{ color:#3d8b40; }
+  .feedback.wrong{ color:#c23c3c; }
+  .feedback .en-small{ display:block; font-family:'Kosugi Maru',sans-serif; font-size:0.9rem; font-weight:400; color:var(--ink); margin-top:4px; }
+
+  .next-btn{
+    margin-top:16px;
+    align-self:center;
+    font-family:'Baloo 2',sans-serif;
+    font-weight:700;
+    font-size:1rem;
+    padding:12px 28px;
+    border:none;
+    border-radius:999px;
+    background:var(--card-blue);
+    color:#fff;
+    box-shadow:0 5px 0 #2f9a92;
+    cursor:pointer;
+    display:none;
+  }
+  .next-btn.show{ display:inline-block; }
+
+  /* ---- Star effect ---- */
+  .star-burst{ position:fixed; inset:0; pointer-events:none; z-index:50; overflow:hidden; }
+  .star-particle{
+    position:absolute; font-size:1.6rem;
+    animation:starfly 0.9s ease-out forwards;
+  }
+  @keyframes starfly{
+    0%{ transform:translate(0,0) scale(0.4) rotate(0deg); opacity:1; }
+    100%{ transform:translate(var(--dx),var(--dy)) scale(1.3) rotate(200deg); opacity:0; }
+  }
+
+  /* ---- Result screen ---- */
+  .result-screen{ align-items:center; text-align:center; justify-content:center; }
+  .result-emoji{ font-size:4rem; margin-bottom:6px; }
+  .result-score{
+    font-family:'Baloo 2',sans-serif;
+    font-size:2.4rem;
+    font-weight:800;
+    color:#e85d04;
+    margin-bottom:4px;
+  }
+  .result-msg{ font-size:1rem; margin-bottom:22px; }
+  .reward-card-wrap{ margin-bottom:22px; }
+  .reward-label{ font-weight:700; margin-bottom:10px; }
+  .result-buttons{ display:flex; flex-direction:column; gap:14px; width:100%; max-width:280px; }
+
+  /* ---- Trading card ---- */
+  .tcard{
+    width:190px;
+    border-radius:20px;
+    padding:12px;
+    background:linear-gradient(160deg,#fffbe8,#ffe9b8);
+    border:5px solid var(--card-yellow);
+    box-shadow:0 8px 0 rgba(0,0,0,0.15), 0 0 0 3px #fff inset;
+    margin:0 auto;
+    position:relative;
+  }
+  .tcard-stars{ font-size:0.8rem; color:#e8a400; letter-spacing:1px; margin-bottom:2px; }
+  .tcard-name{
+    font-family:'Baloo 2',sans-serif;
+    font-weight:800;
+    font-size:1.1rem;
+    color:#e85d04;
+    text-align:center;
+    margin-bottom:6px;
+  }
+  .tcard-photo{
+    width:100%;
+    aspect-ratio:1/1;
+    background:#fff;
+    border-radius:12px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:3.6rem;
+    border:2px dashed var(--card-orange);
+    overflow:hidden;
+    position:relative;
+  }
+  .tcard-photo img{ width:100%; height:100%; object-fit:cover; }
+  .tcard-count{
+    position:absolute;
+    top:6px; right:6px;
+    background:var(--card-red);
+    color:#fff;
+    font-family:'Baloo 2',sans-serif;
+    font-weight:700;
+    font-size:0.7rem;
+    padding:2px 7px;
+    border-radius:999px;
+    box-shadow:0 2px 0 rgba(0,0,0,0.15);
+  }
+  .tcard-foot{
+    display:flex;
+    justify-content:space-between;
+    font-size:0.68rem;
+    font-weight:700;
+    margin-top:6px;
+    opacity:0.75;
+  }
+  .tcard.locked{ filter:grayscale(1) brightness(0.75); opacity:0.55; }
+  .tcard.locked .tcard-photo{ font-size:2.2rem; }
+
+  /* ---- Collection screen ---- */
+  .collection-header{ text-align:center; margin-bottom:14px; }
+  .collection-count{ font-weight:700; font-size:0.95rem; }
+  .category-section{ margin-bottom:22px; }
+  .category-title{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-family:'Baloo 2',sans-serif;
+    font-weight:800;
+    font-size:1.05rem;
+    color:#e85d04;
+    background:rgba(255,255,255,0.6);
+    border-radius:14px;
+    padding:8px 14px;
+    margin-bottom:12px;
+  }
+  .category-title .cat-count{
+    margin-left:auto;
+    font-family:'Kosugi Maru',sans-serif;
+    font-size:0.8rem;
+    font-weight:700;
+    color:var(--ink);
+    opacity:0.7;
+  }
+  .collection-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:14px;
+    padding-bottom:8px;
+  }
+  .collection-grid .tcard{ width:100%; cursor:pointer; }
+  .collection-grid .tcard-name{ font-size:0.8rem; }
+  .collection-grid .tcard-photo{ font-size:2rem; }
+
+  /* ---- Modal ---- */
+  .modal-overlay{
+    position:fixed; inset:0;
+    background:rgba(0,0,0,0.5);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:100;
+    padding:20px;
+  }
+  .modal-overlay.show{ display:flex; }
+  .modal-box{
+    background:#fff;
+    border-radius:24px;
+    padding:24px;
+    max-width:320px;
+    width:100%;
+    text-align:center;
+    position:relative;
+  }
+  .modal-close{
+    position:absolute; top:10px; right:14px;
+    background:none; border:none; font-size:1.4rem;
+    cursor:pointer; color:#999;
+  }
+  .modal-photo{
+    width:140px; height:140px; margin:0 auto 14px;
+    background:#fff8e8; border-radius:16px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:4.5rem; border:3px solid var(--card-yellow);
+    overflow:hidden;
+  }
+  .modal-photo img{ width:100%; height:100%; object-fit:cover; }
+  .modal-en{ font-family:'Baloo 2',sans-serif; font-weight:800; font-size:1.5rem; color:#e85d04; }
+  .modal-ja{ font-size:1rem; margin-bottom:6px; }
+  .modal-count{ font-size:0.8rem; opacity:0.6; margin-bottom:14px; }
+  .speak-btn{
+    font-family:'Baloo 2',sans-serif;
+    font-weight:700;
+    font-size:1rem;
+    padding:10px 24px;
+    border:none;
+    border-radius:999px;
+    background:var(--card-purple);
+    color:#fff;
+    box-shadow:0 5px 0 #7c5cd6;
+    cursor:pointer;
+  }
+  .speak-btn:active{ transform:translateY(3px); box-shadow:none; }
+
+  @media (max-width:380px){
+    .quiz-word{ font-size:1.9rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <div class="topbar">
+    <a class="back-link" href="../../index.html">◀ もどる</a>
+  </div>
+
+  <!-- ============ HOME SCREEN ============ -->
+  <section class="screen home-screen active" id="screen-home">
+    <div class="home-emoji">🐶🍎🚂</div>
+    <div class="home-title">English Picture Quiz</div>
+    <p class="home-sub">えいごの たんごクイズに ちょうせん！<br>カードを あつめよう✨</p>
+    <div class="home-buttons">
+      <button class="big-btn btn-start" id="btnStart">▶ スタート</button>
+      <button class="big-btn btn-collection" id="btnCollection">🗂 カードコレクション</button>
+    </div>
+    <div class="home-stats" id="homeStats">カードずかん 0 / 0 しゅるい</div>
+  </section>
+
+  <!-- ============ QUIZ SCREEN ============ -->
+  <section class="screen" id="screen-quiz">
+    <div class="progress-wrap"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
+    <p class="progress-label" id="progressLabel">1 / 10 もん</p>
+
+    <div class="quiz-card">
+      <div class="quiz-word-frame">
+        <div class="quiz-word" id="quizWord">Dog</div>
+        <button type="button" class="quiz-speak-btn" id="quizSpeakBtn" aria-label="きいてみる">🔊</button>
+      </div>
+      <p class="quiz-question">この たんごの いみは どれ？</p>
+      <div class="choices" id="quizChoices"></div>
+      <p class="feedback" id="quizFeedback"></p>
+      <button class="next-btn" id="btnNext">つぎへ ▶</button>
+    </div>
+  </section>
+
+  <!-- ============ RESULT SCREEN ============ -->
+  <section class="screen result-screen" id="screen-result">
+    <div class="result-emoji" id="resultEmoji">🎉</div>
+    <p class="result-score" id="resultScore">7 / 10</p>
+    <p class="result-msg" id="resultMsg"></p>
+    <div class="reward-card-wrap" id="rewardCardWrap"></div>
+    <div class="result-buttons">
+      <button class="big-btn btn-start" id="btnRetry">🔁 もういちど</button>
+      <button class="big-btn btn-collection" id="btnToHomeFromResult">🏠 ホームへ</button>
+    </div>
+  </section>
+
+  <!-- ============ COLLECTION SCREEN ============ -->
+  <section class="screen" id="screen-collection">
+    <div class="topbar">
+      <button class="back-link" id="btnCollectionBack" style="border:none;cursor:pointer;">◀ ホームへ</button>
+    </div>
+    <div class="collection-header">
+      <p class="collection-count" id="collectionCount">カードコレクション 0 / 0</p>
+    </div>
+    <div id="collectionByCategory"></div>
+  </section>
+
+</div>
+
+<!-- Card detail modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-box">
+    <button class="modal-close" id="modalClose">✕</button>
+    <div class="modal-photo" id="modalPhoto"></div>
+    <p class="modal-en" id="modalEn"></p>
+    <p class="modal-ja" id="modalJa"></p>
+    <p class="modal-count" id="modalCount"></p>
+    <button class="speak-btn" id="modalSpeak">🔊 きいてみる</button>
+  </div>
+</div>
+
+<script src="data/questions.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  const STORAGE_KEY = "epq_owned_cards_v2";
+  const QUESTIONS_PER_SESSION = 10;
+  const PASS_THRESHOLD = 7;
+
+  // ---------- Audio (Web Audio API, no external files) ----------
+  let audioCtx = null;
+  function getCtx(){
+    if(!audioCtx){
+      try{ audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }catch(e){ audioCtx = null; }
+    }
+    return audioCtx;
+  }
+  function beep(freq, dur, type, vol, delay){
+    const ctx = getCtx();
+    if(!ctx) return;
+    const t0 = ctx.currentTime + (delay||0);
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type || "sine";
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(vol||0.15, t0);
+    gain.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start(t0); osc.stop(t0 + dur + 0.02);
+  }
+  function sfxCorrect(){ beep(660,0.12,"sine",0.18,0); beep(880,0.16,"sine",0.18,0.1); beep(1100,0.2,"sine",0.16,0.2); }
+  function sfxWrong(){ beep(220,0.25,"sawtooth",0.12,0); beep(160,0.3,"sawtooth",0.1,0.12); }
+  function sfxClick(){ beep(500,0.06,"square",0.08,0); }
+  function sfxCard(){ beep(500,0.1,"triangle",0.15,0); beep(750,0.12,"triangle",0.15,0.08); beep(1000,0.18,"triangle",0.15,0.16); }
+
+  // ---------- Storage (cardId -> owned count) ----------
+  function loadOwnedCounts(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : {};
+    }catch(e){ return {}; }
+  }
+  function saveOwnedCounts(obj){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(obj)); }catch(e){}
+  }
+  let ownedCounts = loadOwnedCounts();
+  function getCount(id){ return ownedCounts[id] || 0; }
+  function isOwned(id){ return getCount(id) > 0; }
+  function addOwned(id){
+    ownedCounts[id] = getCount(id) + 1;
+    saveOwnedCounts(ownedCounts);
+  }
+  function ownedTypesCount(){
+    return Object.keys(ownedCounts).filter(k => ownedCounts[k] > 0).length;
+  }
+
+  // ---------- Helpers ----------
+  function shuffle(arr){
+    const a = arr.slice();
+    for(let i=a.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [a[i],a[j]]=[a[j],a[i]];
+    }
+    return a;
+  }
+  function pickRandom(arr, n){
+    return shuffle(arr).slice(0, n);
+  }
+  function renderCardVisual(container, entry, locked){
+    container.innerHTML = "";
+    if(locked){
+      container.textContent = "🔒";
+      return;
+    }
+    if(entry.image){
+      const img = document.createElement("img");
+      img.src = entry.image;
+      img.alt = entry.en;
+      img.onerror = function(){
+        container.innerHTML = "";
+        container.textContent = CARD_CATEGORY_ICONS[entry.category] || "❓";
+      };
+      container.appendChild(img);
+    }else{
+      container.textContent = CARD_CATEGORY_ICONS[entry.category] || "❓";
+    }
+  }
+  function starsForRarity(rarity){
+    switch(rarity){
+      case "SUPER RARE": return "★★★★★";
+      case "RARE": return "★★★☆☆";
+      default: return "★☆☆☆☆";
+    }
+  }
+  function speakText(text, lang){
+    if(!("speechSynthesis" in window)) return;
+    try{
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = lang || "en-US";
+      u.rate = 0.85;
+      u.pitch = 1.05;
+      window.speechSynthesis.speak(u);
+    }catch(e){}
+  }
+
+  // ---------- Screen switching ----------
+  const screens = {
+    home: document.getElementById("screen-home"),
+    quiz: document.getElementById("screen-quiz"),
+    result: document.getElementById("screen-result"),
+    collection: document.getElementById("screen-collection"),
+  };
+  function showScreen(name){
+    Object.values(screens).forEach(s=>s.classList.remove("active"));
+    screens[name].classList.add("active");
+    window.scrollTo(0,0);
+  }
+
+  // ---------- Home ----------
+  function refreshHomeStats(){
+    document.getElementById("homeStats").textContent =
+      `カードずかん ${ownedTypesCount()} / ${CARD_DATA.length} しゅるい`;
+  }
+
+  // ---------- Quiz session state ----------
+  let session = null;
+
+  // 3択の選択肢を自動生成する: 正解の意味 + WORDSからランダムに選んだ
+  // 意味が異なる2つの単語。WORDSに単語を追加するだけで出題・選択肢の
+  // どちらも自動的に増える。
+  function buildChoices(correctWord){
+    const others = WORDS.filter(w => w.id !== correctWord.id && w.ja !== correctWord.ja);
+    // 意味の重複を避けつつランダムに2つ選ぶ
+    const seenJa = new Set([correctWord.ja]);
+    const distractors = [];
+    for(const w of shuffle(others)){
+      if(distractors.length >= 2) break;
+      if(seenJa.has(w.ja)) continue;
+      seenJa.add(w.ja);
+      distractors.push(w);
+    }
+    const choiceWords = shuffle([correctWord, ...distractors]);
+    return choiceWords.map(w => ({ text: w.ja, isAnswer: w.id === correctWord.id }));
+  }
+
+  function startSession(){
+    const picked = pickRandom(WORDS, Math.min(QUESTIONS_PER_SESSION, WORDS.length));
+    session = {
+      questions: picked,
+      index: 0,
+      correctCount: 0,
+      answered: false,
+    };
+    showScreen("quiz");
+    renderQuestion();
+  }
+
+  function renderQuestion(){
+    const q = session.questions[session.index];
+    session.answered = false;
+
+    const total = session.questions.length;
+    document.getElementById("progressBar").style.width =
+      Math.round((session.index/total)*100) + "%";
+    document.getElementById("progressLabel").textContent =
+      `${session.index+1} / ${total} もん`;
+
+    document.getElementById("quizWord").textContent = q.en;
+
+    const choicesWrap = document.getElementById("quizChoices");
+    choicesWrap.innerHTML = "";
+    const shuffledChoices = buildChoices(q);
+
+    shuffledChoices.forEach(choice=>{
+      const btn = document.createElement("button");
+      btn.className = "choice-btn";
+
+      const wordSpan = document.createElement("span");
+      wordSpan.className = "choice-word";
+      wordSpan.textContent = choice.text;
+      btn.appendChild(wordSpan);
+
+      btn.addEventListener("click", ()=>onChoose(btn, choice, q));
+      choicesWrap.appendChild(btn);
+    });
+
+    document.getElementById("quizFeedback").textContent = "";
+    document.getElementById("quizFeedback").className = "feedback";
+    document.getElementById("btnNext").classList.remove("show");
+  }
+
+  function onChoose(btn, choice, q){
+    if(session.answered) return;
+    session.answered = true;
+    sfxClick();
+
+    const allBtns = document.querySelectorAll("#quizChoices .choice-btn");
+    allBtns.forEach(b=>b.classList.add("disabled"));
+
+    const feedback = document.getElementById("quizFeedback");
+
+    if(choice.isAnswer){
+      btn.classList.add("correct");
+      session.correctCount++;
+      feedback.className = "feedback correct";
+      feedback.innerHTML = `せいかい！🎉<span class="en-small">${q.en}（${q.ja}）</span>`;
+      sfxCorrect();
+      spawnStars();
+    }else{
+      btn.classList.add("wrong");
+      allBtns.forEach(b=>{
+        const wordEl = b.querySelector(".choice-word");
+        if(wordEl && wordEl.textContent === q.ja) b.classList.add("correct");
+      });
+      feedback.className = "feedback wrong";
+      feedback.innerHTML = `ざんねん… <span class="en-small">せいかいは「${q.ja}」（${q.en}）</span>`;
+      sfxWrong();
+    }
+
+    document.getElementById("btnNext").classList.add("show");
+  }
+
+  function spawnStars(){
+    const burst = document.createElement("div");
+    burst.className = "star-burst";
+    document.body.appendChild(burst);
+    const n = 14;
+    for(let i=0;i<n;i++){
+      const s = document.createElement("div");
+      s.className = "star-particle";
+      s.textContent = ["⭐","✨","🌟"][Math.floor(Math.random()*3)];
+      const cx = window.innerWidth/2, cy = window.innerHeight*0.4;
+      s.style.left = cx + "px";
+      s.style.top = cy + "px";
+      const angle = Math.random()*Math.PI*2;
+      const dist = 80 + Math.random()*140;
+      s.style.setProperty("--dx", Math.cos(angle)*dist + "px");
+      s.style.setProperty("--dy", Math.sin(angle)*dist + "px");
+      burst.appendChild(s);
+    }
+    setTimeout(()=>burst.remove(), 950);
+  }
+
+  function nextQuestion(){
+    session.index++;
+    if(session.index >= session.questions.length){
+      finishSession();
+    }else{
+      renderQuestion();
+    }
+  }
+
+  function finishSession(){
+    const total = session.questions.length;
+    const score = session.correctCount;
+    const passed = score >= PASS_THRESHOLD;
+
+    document.getElementById("resultEmoji").textContent = passed ? "🏆" : "💪";
+    document.getElementById("resultScore").textContent = `${score} / ${total}`;
+    document.getElementById("resultMsg").textContent = passed
+      ? "すごい！カードを 1まい ゲットしたよ！"
+      : "おしい！7もんいじょう せいかいで カードがもらえるよ。";
+
+    const rewardWrap = document.getElementById("rewardCardWrap");
+    rewardWrap.innerHTML = "";
+
+    if(passed){
+      // クイズの単語とは無関係に、カード図鑑からランダムに1枚抽選する。
+      // 同じカードが出た場合は所持数を+1する。
+      const rewardEntry = CARD_DATA[Math.floor(Math.random() * CARD_DATA.length)];
+      addOwned(rewardEntry.id);
+      sfxCard();
+      const label = document.createElement("p");
+      label.className = "reward-label";
+      label.textContent = "獲得カード";
+      rewardWrap.appendChild(label);
+      rewardWrap.appendChild(buildCardEl(rewardEntry, true));
+    }
+
+    refreshHomeStats();
+    showScreen("result");
+  }
+
+  // ---------- Trading card element ----------
+  function buildCardEl(entry, owned){
+    const card = document.createElement("div");
+    card.className = "tcard" + (owned ? "" : " locked");
+
+    const stars = document.createElement("div");
+    stars.className = "tcard-stars";
+    stars.textContent = starsForRarity(entry.rarity);
+    card.appendChild(stars);
+
+    const name = document.createElement("div");
+    name.className = "tcard-name";
+    name.textContent = owned ? entry.en.toUpperCase() : "？？？";
+    card.appendChild(name);
+
+    const photo = document.createElement("div");
+    photo.className = "tcard-photo";
+    renderCardVisual(photo, entry, !owned);
+
+    const count = getCount(entry.id);
+    if(owned && count > 1){
+      const countBadge = document.createElement("span");
+      countBadge.className = "tcard-count";
+      countBadge.textContent = "×" + count;
+      photo.appendChild(countBadge);
+    }
+    card.appendChild(photo);
+
+    const foot = document.createElement("div");
+    foot.className = "tcard-foot";
+    const noStr = "No." + String(entry.id).padStart(3,"0");
+    foot.innerHTML = `<span>${noStr}</span><span>${owned ? entry.rarity : "?????"}</span>`;
+    card.appendChild(foot);
+
+    return card;
+  }
+
+  // ---------- Collection screen (grouped by category) ----------
+  function renderCollection(){
+    const totalOwnedTypes = ownedTypesCount();
+    document.getElementById("collectionCount").textContent =
+      `カードコレクション ${totalOwnedTypes} / ${CARD_DATA.length}`;
+
+    const wrap = document.getElementById("collectionByCategory");
+    wrap.innerHTML = "";
+
+    CARD_CATEGORY_ORDER.forEach(cat=>{
+      const cardsInCat = CARD_DATA.filter(c => c.category === cat);
+      if(cardsInCat.length === 0) return;
+
+      const section = document.createElement("div");
+      section.className = "category-section";
+
+      const title = document.createElement("div");
+      title.className = "category-title";
+      const ownedInCat = cardsInCat.filter(c => isOwned(c.id)).length;
+      title.innerHTML = `<span>${CARD_CATEGORY_ICONS[cat] || "❓"}</span><span>${CARD_CATEGORY_LABELS[cat] || cat}</span><span class="cat-count">${ownedInCat} / ${cardsInCat.length}</span>`;
+      section.appendChild(title);
+
+      const grid = document.createElement("div");
+      grid.className = "collection-grid";
+      cardsInCat.forEach(entry=>{
+        const owned = isOwned(entry.id);
+        const cardEl = buildCardEl(entry, owned);
+        cardEl.addEventListener("click", ()=>{
+          sfxClick();
+          openModal(entry, owned);
+        });
+        grid.appendChild(cardEl);
+      });
+      section.appendChild(grid);
+
+      wrap.appendChild(section);
+    });
+  }
+
+  // ---------- Modal ----------
+  const modalOverlay = document.getElementById("modalOverlay");
+  function openModal(entry, owned){
+    if(!owned) return;
+    renderCardVisual(document.getElementById("modalPhoto"), entry, false);
+    document.getElementById("modalEn").textContent = entry.en;
+    document.getElementById("modalJa").textContent = entry.ja;
+    document.getElementById("modalCount").textContent = "しょじすう ×" + getCount(entry.id);
+    modalOverlay.classList.add("show");
+    modalOverlay.dataset.word = entry.en;
+  }
+  function closeModal(){ modalOverlay.classList.remove("show"); }
+
+  // ---------- Wire up events ----------
+  document.getElementById("btnStart").addEventListener("click", ()=>{ sfxClick(); startSession(); });
+  document.getElementById("btnCollection").addEventListener("click", ()=>{ sfxClick(); renderCollection(); showScreen("collection"); });
+  document.getElementById("btnCollectionBack").addEventListener("click", ()=>{ sfxClick(); refreshHomeStats(); showScreen("home"); });
+  document.getElementById("btnNext").addEventListener("click", ()=>{ sfxClick(); nextQuestion(); });
+  document.getElementById("quizSpeakBtn").addEventListener("click", ()=>{
+    if(session && session.questions[session.index]){
+      speakText(session.questions[session.index].en, "en-US");
+    }
+  });
+  document.getElementById("btnRetry").addEventListener("click", ()=>{ sfxClick(); startSession(); });
+  document.getElementById("btnToHomeFromResult").addEventListener("click", ()=>{ sfxClick(); refreshHomeStats(); showScreen("home"); });
+  document.getElementById("modalClose").addEventListener("click", closeModal);
+  modalOverlay.addEventListener("click", (e)=>{ if(e.target===modalOverlay) closeModal(); });
+  document.getElementById("modalSpeak").addEventListener("click", ()=>{
+    const word = modalOverlay.dataset.word;
+    if(word) speakText(word, "en-US");
+  });
+
+  refreshHomeStats();
+})();
+</script>
+</body>
+</html>
