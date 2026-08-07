@@ -42,6 +42,15 @@ const games = [
     url: "games/sight-word-flashcards/index.html",
     available: true,
   },
+  {
+    id: "pokemon-memory",
+    title: "ポケモン記憶ゲーム",
+    emoji: "🧠",
+    tag: "きおく ・ 5〜9さい",
+    desc: "ならんだポケモンのじゅんばんをおぼえよう！レベルアップでもっとむずかしく🔥",
+    url: "games/pokemon-memory/index.html",
+    available: true,
+  },
   // 新しいゲームはここに追加
 ];
 
