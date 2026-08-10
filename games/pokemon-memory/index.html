@@ -18,12 +18,10 @@ body {
   overflow-x: hidden;
   background-color: #fef6ff;
   background-image:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Ctext y='72' font-size='58' opacity='0.09'%3E⚡%3C/text%3E%3C/svg%3E"),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Ctext x='60' y='72' font-size='58' opacity='0.09'%3E🌟%3C/text%3E%3C/svg%3E"),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Ctext y='72' font-size='58' opacity='0.09'%3E❤️%3C/text%3E%3C/svg%3E"),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Ctext x='60' y='72' font-size='58' opacity='0.09'%3E✨%3C/text%3E%3C/svg%3E");
-  background-size: 240px 240px;
-  background-position: 0 0, 120px 0, 0 120px, 120px 120px;
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Ctext y='72' font-size='54' opacity='0.045'%3E⚡%3C/text%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Ctext x='80' y='152' font-size='54' opacity='0.045'%3E✨%3C/text%3E%3C/svg%3E");
+  background-size: 320px 320px;
+  background-position: 0 0, 160px 160px;
   background-repeat: repeat;
   padding: 12px 12px 48px;
 }
@@ -59,16 +57,33 @@ h1 {
 }
 .subtitle { color: #999; font-size: 0.92rem; margin-bottom: 18px; }
 
-/* ── ホーム画面：レベル選択 ── */
+/* ── ホーム画面：全体レイアウト ── */
+#home-screen {
+  display: flex; flex-direction: column; align-items: stretch;
+  gap: 20px;
+}
+.home-header { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.home-header h1 { margin-bottom: 0; }
+.home-header .subtitle { margin-bottom: 0; }
+
+/* ── 地方セレクター カード ── */
+.region-picker-card {
+  background: linear-gradient(160deg, #faf5ff, #f0e2ff);
+  border: 2px solid #e8d0ff;
+  border-radius: 20px;
+  padding: 14px 16px 16px;
+}
+
+/* ── レベル選択 ── */
 #level-list {
-  display: flex; flex-direction: column; gap: 12px; margin-top: 6px;
+  display: flex; flex-direction: column; gap: 12px;
 }
 .level-btn {
   font-family: inherit;
-  display: flex; align-items: center; justify-content: space-between;
-  width: 100%; padding: 16px 20px;
-  border: none; border-radius: 20px; cursor: pointer;
-  background: linear-gradient(175deg, #f0e8ff, #e0ccff);
+  display: flex; align-items: center; flex-wrap: wrap; gap: 6px 14px;
+  width: 100%; padding: 16px 18px;
+  border: none; border-radius: 22px; cursor: pointer;
+  background: linear-gradient(175deg, #f5f0ff, #e2ccff);
   box-shadow: 0 6px 0 #c8a8ee, 0 8px 16px rgba(140,80,220,0.15);
   transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.1s;
   -webkit-tap-highlight-color: transparent;
@@ -76,14 +91,43 @@ h1 {
 }
 .level-btn:hover  { transform: translateY(-3px); }
 .level-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #c8a8ee; }
-.level-btn .lv-main { display: flex; flex-direction: column; gap: 2px; }
-.level-btn .lv-title { font-size: 1.1rem; font-weight: bold; color: #6b3fa0; }
-.level-btn .lv-desc  { font-size: 0.82rem; color: #8866aa; }
+.level-btn .lv-num {
+  flex-shrink: 0;
+  width: 44px; height: 44px; border-radius: 50%;
+  background: linear-gradient(150deg, #b26cff, #7c3aed);
+  color: white; font-size: 1.2rem; font-weight: 900;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 3px 0 #5b21b6;
+}
+.level-btn .lv-main { flex: 1 1 auto; min-width: 140px; display: flex; flex-direction: column; gap: 4px; }
+.level-btn .lv-title { font-size: 1.15rem; font-weight: bold; color: #5a3080; }
+.level-btn .lv-desc  { font-size: 0.8rem; color: #8866aa; line-height: 1.4; }
 .level-btn .lv-badge {
-  font-size: 0.85rem; color: #7c3aed; background: white;
-  border-radius: 999px; padding: 6px 12px; white-space: nowrap;
+  flex-shrink: 0; margin-left: auto;
+  font-size: 0.78rem; color: #7c3aed; background: white;
+  border-radius: 999px; padding: 7px 12px; white-space: nowrap;
   box-shadow: 0 0 0 2px #d4aaff inset;
 }
+
+/* ── ポケモンずかん CTA ── */
+.collection-cta {
+  font-family: inherit;
+  display: flex; align-items: center; gap: 14px;
+  width: 100%; padding: 16px 20px;
+  border: none; border-radius: 22px; cursor: pointer;
+  background: linear-gradient(175deg, #fff6dc, #ffe6a8);
+  box-shadow: 0 6px 0 #e0b040, 0 8px 16px rgba(220,170,40,0.18);
+  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.1s;
+  -webkit-tap-highlight-color: transparent;
+  text-align: left;
+}
+.collection-cta:hover  { transform: translateY(-3px); }
+.collection-cta:active { transform: translateY(4px); box-shadow: 0 2px 0 #e0b040; }
+.collection-cta .cta-icon { flex-shrink: 0; font-size: 1.9rem; }
+.collection-cta .cta-text { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.collection-cta .cta-title { font-size: 1.05rem; font-weight: bold; color: #8a6100; }
+.collection-cta .cta-desc { font-size: 0.78rem; color: #a98530; }
+.collection-cta .cta-arrow { flex-shrink: 0; color: #c99a20; font-size: 1.1rem; font-weight: bold; }
 
 /* ── ゲーム画面 ── */
 #game-screen { display: none; flex-direction: column; align-items: center; }
@@ -109,7 +153,7 @@ h1 {
   gap: 10px; margin: 6px 0 20px;
 }
 .poke-card {
-  width: 84px; height: 108px;
+  width: 108px; height: 138px;
   perspective: 900px;
 }
 .poke-card-inner {
@@ -123,32 +167,35 @@ h1 {
   backface-visibility: hidden;
   border-radius: 16px;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  box-shadow: 0 0 0 3px white, 0 0 0 5px #d4aaff, 0 6px 16px rgba(120,60,200,0.15);
+  box-shadow: 0 0 0 3px white, 0 0 0 5px #8fdba0, 0 6px 16px rgba(40,140,80,0.18);
   overflow: hidden;
 }
 .poke-card-front {
-  background: linear-gradient(160deg, #fff, #f6ecff);
+  background: linear-gradient(160deg, #ffffff, #e6f9e9);
   padding: 6px 4px 5px;
   animation: poke-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .poke-card-front .poke-img-wrap {
-  width: 56px; height: 56px; display: flex; align-items: center; justify-content: center;
+  width: 72px; height: 72px; display: flex; align-items: center; justify-content: center;
 }
 .poke-card-front img { width: 100%; height: 100%; object-fit: contain; display: block; }
-.poke-card-front .poke-emoji-fallback { font-size: 2.2rem; display: none; }
-.poke-card-front .poke-name { font-size: 0.68rem; color: #7a4bab; font-weight: bold; margin-top: 3px; text-align: center; line-height: 1.15; }
+.poke-card-front .poke-emoji-fallback { font-size: 2.6rem; display: none; }
+.poke-card-front .poke-name { font-size: 0.78rem; color: #2f8f4e; font-weight: bold; margin-top: 4px; text-align: center; line-height: 1.15; }
 .poke-card-back {
-  background: linear-gradient(160deg, #b26cff, #7c3aed);
+  background: linear-gradient(160deg, #7de89a, #2fa85a);
   transform: rotateY(180deg);
-  font-size: 2rem;
+  font-size: 3rem;
+  font-weight: 900;
+  color: #fff9c4;
+  text-shadow: 0 3px 0 #1f7a3f, 0 4px 8px rgba(0,0,0,0.15);
 }
 @keyframes poke-pop { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
 
 /* 順番の番号ラベル */
 .poke-card-order {
-  position: absolute; top: -8px; left: -8px;
-  width: 24px; height: 24px; border-radius: 50%;
-  background: #ff7a45; color: white; font-size: 0.78rem; font-weight: bold;
+  position: absolute; top: -9px; left: -9px;
+  width: 28px; height: 28px; border-radius: 50%;
+  background: #ff7a45; color: white; font-size: 0.88rem; font-weight: bold;
   display: flex; align-items: center; justify-content: center;
   box-shadow: 0 2px 4px rgba(0,0,0,0.2);
   z-index: 2;
@@ -159,7 +206,7 @@ h1 {
 .order-choice-btn {
   font-family: inherit;
   border: none; border-radius: 20px; cursor: pointer;
-  padding: 12px 14px;
+  padding: 18px 16px;
   background: linear-gradient(175deg, #fff5cc, #ffe577);
   box-shadow: 0 7px 0 #c8a800, 0 9px 16px rgba(200,180,0,0.16);
   transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.1s;
@@ -173,11 +220,11 @@ h1 {
 .order-choice-btn.correct { background: linear-gradient(175deg, #d4ffd6, #96f0a0) !important; box-shadow: 0 0 0 4px #44cc55, 0 7px 0 #33aa33 !important; }
 .order-choice-btn.wrong   { background: linear-gradient(175deg, #ffe9d6, #ffc699) !important; box-shadow: 0 0 0 4px #ff9a45, 0 7px 0 #cc7a22 !important; }
 
-.choice-order-row { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 4px; }
+.choice-order-row { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 7px; }
 .choice-thumb { display: flex; flex-direction: column; align-items: center; }
-.choice-thumb img { width: 34px; height: 34px; object-fit: contain; }
-.choice-thumb .choice-emoji-fallback { font-size: 1.4rem; display: none; }
-.choice-arrow { color: #999; font-size: 0.9rem; margin: 0 1px; }
+.choice-thumb img { width: 50px; height: 50px; object-fit: contain; }
+.choice-thumb .choice-emoji-fallback { font-size: 2rem; display: none; }
+.choice-arrow { color: #999; font-size: 1.25rem; margin: 0 2px; font-weight: bold; }
 
 #feedback { font-size: 1.25rem; font-weight: bold; margin-top: 14px; min-height: 1.8rem; }
 #feedback.correct { color: #27ae60; }
@@ -217,10 +264,140 @@ h1 {
   100% { transform: translate(var(--tx),var(--ty)) scale(1.1) rotate(var(--tr)); opacity: 0; }
 }
 
+/* ── 地方セレクター（ホーム画面） ── */
+.region-picker-label { font-size: 0.85rem; font-weight: bold; color: #7c3aed; margin: 0 0 10px; text-align: left; }
+#region-picker { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-start; width: 100%; }
+.region-chip {
+  font-family: inherit; font-size: 0.8rem; font-weight: bold;
+  padding: 8px 14px; border-radius: 999px; cursor: pointer;
+  border: 2px solid #d4aaff; background: white; color: #7c3aed;
+  transition: transform 0.15s, background 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.region-chip.selected { background: linear-gradient(150deg, #b26cff, #7c3aed); color: white; border-color: #7c3aed; }
+.region-chip.locked { background: #f2f2f2; color: #bbb; border-color: #e0e0e0; cursor: default; }
+.region-chip:not(.locked):hover { transform: translateY(-2px); }
+.region-chip:not(.locked):active { transform: translateY(1px); }
+
+/* ── 地方べつ捕獲状況（ずかん画面） ── */
+#region-summary-list { display: flex; flex-direction: column; gap: 6px; width: 100%; margin: 8px 0 14px; }
+.region-summary-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 14px; border-radius: 14px; font-size: 0.88rem; font-weight: bold;
+  background: linear-gradient(160deg, #f6ecff, #ece0ff); color: #6b3fa0;
+  border: 2px solid transparent; cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.12s;
+}
+.region-summary-row.selected { border-color: #7c3aed; box-shadow: 0 0 0 2px #d4aaff; }
+.region-summary-row.locked { background: #f2f2f2; color: #bbb; cursor: default; }
+.region-summary-row:not(.locked):hover { transform: translateY(-1px); }
+.region-summary-row .rs-count { font-weight: 900; }
+
+/* ── 捕獲リワードパネル（結果画面） ── */
+#capture-panel {
+  width: 100%;
+  background: linear-gradient(160deg, #fff9e0, #ffe9b0);
+  border: 2px solid #ffcf5c;
+  border-radius: 20px;
+  padding: 14px 12px 16px;
+  text-align: center;
+  margin-top: 4px;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+}
+.monsterball {
+  width: 70px; height: 70px; margin: 4px auto 6px;
+  border-radius: 50%;
+  background: linear-gradient(to bottom, #ff5555 0%, #ff5555 46%, #2b2b2b 46%, #2b2b2b 54%, #ffffff 54%, #ffffff 100%);
+  box-shadow: 0 0 0 3px #2b2b2b, 0 6px 14px rgba(0,0,0,0.25);
+  position: relative;
+}
+.monsterball::after {
+  content: '';
+  position: absolute; top: 50%; left: 50%;
+  width: 20px; height: 20px;
+  background: #fff; border: 4px solid #2b2b2b; border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+.monsterball.ball-wobble { animation: ball-wobble 0.9s ease; }
+@keyframes ball-wobble {
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  10% { transform: rotate(-18deg) scale(1.05); }
+  25% { transform: rotate(16deg) scale(1.05); }
+  40% { transform: rotate(-14deg) scale(1.05); }
+  55% { transform: rotate(10deg) scale(1.02); }
+  70% { transform: rotate(-6deg) scale(1); }
+  85% { transform: rotate(3deg) scale(1); }
+}
+#capture-main-msg { font-size: 1.05rem; font-weight: bold; color: #a06600; margin-top: 2px; }
+#capture-reveal { display: none; flex-direction: column; align-items: center; gap: 4px; margin-top: 10px; }
+.capture-poke-visual { width: 76px; height: 76px; display: flex; align-items: center; justify-content: center; }
+.capture-poke-visual img { width: 100%; height: 100%; object-fit: contain; }
+.capture-poke-visual .poke-emoji-fallback { font-size: 2.4rem; }
+#capture-poke-name { font-size: 1.15rem; font-weight: bold; color: #6b3fa0; }
+#capture-poke-count-msg { font-size: 1rem; color: #555; }
+#capture-evolve-hint { font-size: 0.92rem; color: #d1861a; font-weight: bold; margin-top: 4px; }
+
+/* ── ポケモンずかん画面 ── */
+#collection-screen { display: none; flex-direction: column; align-items: center; }
+#dex-count-label { font-weight: bold; color: #7c3aed; }
+#dex-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 10px; width: 100%; margin: 10px 0 6px;
+}
+.dex-card {
+  background: linear-gradient(160deg, #fff, #f6ecff);
+  border-radius: 14px;
+  box-shadow: 0 0 0 2px #e8d0ff, 0 4px 10px rgba(120,60,200,0.1);
+  padding: 16px 4px 8px;
+  display: flex; flex-direction: column; align-items: center;
+  position: relative;
+}
+.dex-card.unknown { background: #f2f2f2; box-shadow: 0 0 0 2px #ddd; }
+.dex-card .dex-num { font-size: 0.55rem; color: #bbb; position: absolute; top: 5px; left: 7px; }
+.dex-card .dex-img-wrap { width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; }
+.dex-card .dex-img-wrap img { width: 100%; height: 100%; object-fit: contain; }
+.dex-card .dex-img-wrap .poke-emoji-fallback { font-size: 1.7rem; }
+.dex-card .dex-unknown-mark { font-size: 1.8rem; color: #bbb; font-weight: 900; }
+.dex-card .dex-name { font-size: 0.62rem; font-weight: bold; color: #6b3fa0; margin-top: 4px; text-align: center; line-height: 1.15; min-height: 1.6em; }
+.dex-card.unknown .dex-name { color: #bbb; }
+.dex-card .dex-count-badge { font-size: 0.62rem; background: #7c3aed; color: white; border-radius: 999px; padding: 1px 7px; margin-top: 3px; }
+.dex-card .dex-evolve-badge { font-size: 0.56rem; background: #ff7a45; color: white; border-radius: 999px; padding: 2px 6px; margin-top: 4px; font-weight: bold; }
+.dex-card .dex-evolve-btn {
+  margin-top: 5px; font-family: inherit; font-size: 0.62rem; font-weight: bold;
+  background: linear-gradient(150deg, #7de89a, #2fa85a); color: white;
+  border: none; border-radius: 999px; padding: 5px 9px; cursor: pointer;
+  box-shadow: 0 3px 0 #1f7a3f;
+  -webkit-tap-highlight-color: transparent;
+}
+.dex-card .dex-evolve-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #1f7a3f; }
+
+/* ── 進化演出オーバーレイ ── */
+#evolve-overlay {
+  display: none;
+  position: fixed; inset: 0; background: rgba(20,10,40,0.6);
+  z-index: 10000; align-items: center; justify-content: center; padding: 16px;
+}
+#evolve-overlay.show { display: flex; }
+#evolve-box {
+  background: white; border-radius: 24px; padding: 28px 22px; max-width: 340px; width: 100%;
+  text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+}
+.evolve-poke-img-wrap { width: 110px; height: 110px; margin: 0 auto 12px; display: flex; align-items: center; justify-content: center; }
+.evolve-poke-img-wrap img { width: 100%; height: 100%; object-fit: contain; }
+.evolve-poke-img-wrap .poke-emoji-fallback { font-size: 3.2rem; }
+.evolve-poke-img-wrap.flashing img { animation: evolve-flash 0.5s infinite; }
+@keyframes evolve-flash { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(2.2) saturate(0); } }
+#evolve-step-text { font-size: 1.1rem; font-weight: bold; color: #6b3fa0; min-height: 3.6em; line-height: 1.5; white-space: pre-line; }
+#evolve-close-btn { margin-top: 6px; background: linear-gradient(150deg, #b26cff, #7c3aed); color: white; box-shadow: 0 7px 0 #5b21b6; }
+#evolve-close-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #5b21b6; }
+
 @media (max-width: 420px) {
   #app { padding: 18px 12px 24px; }
-  .poke-card { width: 68px; height: 92px; }
-  .poke-card-front .poke-img-wrap { width: 44px; height: 44px; }
+  .poke-card { width: 88px; height: 114px; }
+  .poke-card-front .poke-img-wrap { width: 58px; height: 58px; }
 }
 </style>
 </head>
@@ -234,9 +411,26 @@ h1 {
 
   <!-- ── ホーム画面（レベル選択） ── -->
   <div id="home-screen">
-    <h1>🧠 ポケモン記憶ゲーム</h1>
-    <div class="subtitle">ならんだ じゅんばんを おぼえよう！</div>
+    <div class="home-header">
+      <h1>🧠 ポケモン記憶ゲーム</h1>
+      <div class="subtitle">ならんだ じゅんばんを おぼえよう！</div>
+    </div>
+
+    <div class="region-picker-card">
+      <div class="region-picker-label">🗺️ 地方をえらぶ</div>
+      <div id="region-picker"></div>
+    </div>
+
     <div id="level-list"></div>
+
+    <button class="collection-cta" id="open-collection-btn">
+      <span class="cta-icon">📖</span>
+      <span class="cta-text">
+        <span class="cta-title">ポケモンずかん</span>
+        <span class="cta-desc">つかまえたポケモンを みてみよう</span>
+      </span>
+      <span class="cta-arrow">▶</span>
+    </button>
   </div>
 
   <!-- ── ゲーム画面 ── -->
@@ -263,6 +457,21 @@ h1 {
     <div id="result-title">よくできました！</div>
     <div id="result-subtitle"></div>
     <div id="result-score"></div>
+
+    <div id="capture-panel">
+      <div class="monsterball" id="capture-ball"></div>
+      <div id="capture-main-msg"></div>
+      <div id="capture-reveal">
+        <div class="capture-poke-visual">
+          <img id="capture-poke-img">
+          <span id="capture-poke-fallback" class="poke-emoji-fallback" style="display:none;">🐾</span>
+        </div>
+        <div id="capture-poke-name"></div>
+        <div id="capture-poke-count-msg"></div>
+        <div id="capture-evolve-hint" style="display:none;">✨ 進化できるよ！ずかんで進化させよう ✨</div>
+      </div>
+    </div>
+
     <div class="result-btns">
       <button class="result-btn" id="retry-btn">もういちど 🔄</button>
       <button class="result-btn" id="level-select-btn">べつのレベルへ 🗺️</button>
@@ -270,10 +479,35 @@ h1 {
     </div>
   </div>
 
+  <!-- ── ポケモンずかん（コレクション）画面 ── -->
+  <div id="collection-screen">
+    <h1>📖 ポケモンずかん</h1>
+    <div id="region-summary-list"></div>
+    <div class="subtitle" id="dex-count-label"></div>
+    <div id="dex-grid"></div>
+    <div class="result-btns" style="margin-top:14px;">
+      <button class="result-btn" id="collection-home-btn">🏠 もどる</button>
+    </div>
+  </div>
+
 </div>
 
-<script src="data/pokemon.js"></script>
+<!-- ── 進化演出オーバーレイ ── -->
+<div id="evolve-overlay">
+  <div id="evolve-box">
+    <div class="evolve-poke-img-wrap" id="evolve-visual-wrap">
+      <img id="evolve-img-before">
+      <span id="evolve-img-fallback" class="poke-emoji-fallback" style="display:none;">🐾</span>
+    </div>
+    <div id="evolve-step-text"></div>
+    <button class="result-btn" id="evolve-close-btn" style="display:none;">とじる</button>
+  </div>
+</div>
+
+<script src="../../assets/data/pokemon/pokemon.js"></script>
+<script src="../../assets/data/pokemon/regions.js"></script>
 <script src="data/levels.js"></script>
+<script src="data/evolutions.js"></script>
 <script>
 // ============================================================
 // 画像パス
@@ -412,6 +646,80 @@ function updateProgress(level, score, total, cleared) {
 }
 
 // ============================================================
+// localStorage 捕獲コレクション保存（進捗データとは別管理）
+// ============================================================
+// 形式： { [図鑑番号]: 所持数 }
+const COLLECTION_KEY = 'pkmemory_collection_v1';
+function loadCollection() {
+  try { return JSON.parse(localStorage.getItem(COLLECTION_KEY)) || {}; }
+  catch (e) { return {}; }
+}
+function saveCollection(collection) {
+  localStorage.setItem(COLLECTION_KEY, JSON.stringify(collection));
+}
+function addCaught(id) {
+  const collection = loadCollection();
+  collection[id] = (collection[id] || 0) + 1;
+  saveCollection(collection);
+  return collection[id];
+}
+function getPokemonById(id) {
+  return POKEMON_LIST.find(p => p.id === id);
+}
+function canEvolve(id) {
+  const opts = EVOLUTIONS[id];
+  return !!(opts && opts.length > 0);
+}
+// 進化元を3匹消費し、進化先（複数候補があればランダムで1つ）を1匹追加する。
+// EVOLUTIONS[id] は配列構造なので、将来「選択式」にする場合はこの
+// ランダム抽選部分だけを差し替えればよい。
+function consumeAndEvolve(baseId, toId) {
+  const collection = loadCollection();
+  collection[baseId] = Math.max(0, (collection[baseId] || 0) - 3);
+  collection[toId] = (collection[toId] || 0) + 1;
+  saveCollection(collection);
+}
+
+// ============================================================
+// 地方（リージョン）選択
+// ============================================================
+const SELECTED_REGION_KEY = 'pkmemory_selected_region_v1';
+
+function firstAvailableRegion() {
+  return (REGIONS.find(r => r.available) || REGIONS[0]).key;
+}
+function loadSelectedRegion() {
+  const saved = localStorage.getItem(SELECTED_REGION_KEY);
+  const region = REGIONS.find(r => r.key === saved && r.available);
+  return region ? region.key : firstAvailableRegion();
+}
+function saveSelectedRegion(key) {
+  localStorage.setItem(SELECTED_REGION_KEY, key);
+}
+let selectedRegion = loadSelectedRegion();
+
+function renderRegionPicker() {
+  const wrap = document.getElementById('region-picker');
+  wrap.innerHTML = '';
+  REGIONS.forEach(r => {
+    const chip = document.createElement('button');
+    chip.className = 'region-chip'
+      + (r.key === selectedRegion ? ' selected' : '')
+      + (r.available ? '' : ' locked');
+    chip.textContent = r.available ? r.label : `${r.label} 🔒`;
+    chip.disabled = !r.available;
+    if (r.available) {
+      chip.addEventListener('click', () => {
+        selectedRegion = r.key;
+        saveSelectedRegion(r.key);
+        renderRegionPicker();
+      });
+    }
+    wrap.appendChild(chip);
+  });
+}
+
+// ============================================================
 // ホーム画面（レベル選択）
 // ============================================================
 function renderLevelList() {
@@ -423,11 +731,12 @@ function renderLevelList() {
     const btn = document.createElement('button');
     btn.className = 'level-btn';
     btn.innerHTML = `
+      <span class="lv-num">${lv.level}</span>
       <span class="lv-main">
-        <span class="lv-title">レベル ${lv.level}　${lv.count}匹・${(lv.showTime/1000).toFixed(0)}秒</span>
-        <span class="lv-desc">ぜんぶで ${lv.questionsPerSession}もん（${lv.clearScore}もん正解でクリア）</span>
+        <span class="lv-title">レベル ${lv.level}</span>
+        <span class="lv-desc">${lv.count}匹・${(lv.showTime/1000).toFixed(0)}秒　／　全${lv.questionsPerSession}問（${lv.clearScore}問正解でクリア）</span>
       </span>
-      <span class="lv-badge">${p.cleared ? '⭐クリア済み' : (p.best > 0 ? 'さいこう ' + p.best + 'もん' : 'まだ')}</span>
+      <span class="lv-badge">${p.cleared ? '⭐ クリア済み' : (p.best > 0 ? 'さいこう ' + p.best + '問' : 'まだ')}</span>
     `;
     btn.addEventListener('click', () => startLevel(lv.level));
     wrap.appendChild(btn);
@@ -446,7 +755,7 @@ let state = {
 };
 
 function showScreen(id) {
-  ['home-screen', 'game-screen', 'result-screen'].forEach(s => {
+  ['home-screen', 'game-screen', 'result-screen', 'collection-screen'].forEach(s => {
     document.getElementById(s).style.display = (s === id) ? 'flex' : 'none';
   });
 }
@@ -479,8 +788,12 @@ function nextQuestion() {
   document.getElementById('feedback').textContent = '';
   document.getElementById('feedback').className = '';
 
-  // N匹をランダムに選ぶ（重複なし）
-  state.correctOrder = shuffle(POKEMON_LIST).slice(0, state.levelConf.count);
+  // N匹をランダムに選ぶ（重複なし、選択中の地方のポケモンから）
+  // 万一その地方のポケモン数が足りない場合は、ゲームが止まらないよう
+  // 全ポケモンからの抽選にフォールバックする。
+  const regionPool = POKEMON_LIST.filter(p => p.region === selectedRegion);
+  const pool = regionPool.length >= state.levelConf.count ? regionPool : POKEMON_LIST;
+  state.correctOrder = shuffle(pool).slice(0, state.levelConf.count);
 
   renderPokeRow(true);
   document.getElementById('phase-message').textContent = 'よく見て おぼえてね！';
@@ -511,7 +824,7 @@ function renderPokeRow(faceUp) {
           </div>
           <div class="poke-name">${p.name}</div>
         </div>
-        <div class="poke-card-back">❓</div>
+        <div class="poke-card-back">?</div>
       </div>
     `;
     row.appendChild(card);
@@ -632,23 +945,223 @@ function showResult() {
   document.getElementById('result-score').textContent =
     `レベル${state.level}　${total}もんちゅう ${score}もん せいかい！（さいこうきろく：${rec.best}もん）`;
 
+  // 捕獲リワードパネルをリセット（毎回のresult表示で古い内容が残らないように）
+  document.getElementById('capture-panel').style.display = 'none';
+  document.getElementById('capture-reveal').style.display = 'none';
+
   if (cleared) {
     playFinale();
     const cx = window.innerWidth / 2, cy = window.innerHeight / 2;
     setTimeout(() => launchSparkles(cx, cy), 150);
     setTimeout(() => launchSparkles(cx - 80, cy - 60), 500);
     setTimeout(() => launchSparkles(cx + 80, cy - 60), 750);
+    triggerCaptureReward();
   }
+}
+
+// ============================================================
+// レベルクリア報酬：ポケモンを1匹つかまえる
+// ============================================================
+function triggerCaptureReward() {
+  const panel = document.getElementById('capture-panel');
+  const ball = document.getElementById('capture-ball');
+  const mainMsg = document.getElementById('capture-main-msg');
+  const reveal = document.getElementById('capture-reveal');
+
+  panel.style.display = 'flex';
+  reveal.style.display = 'none';
+  mainMsg.textContent = 'やったね！ポケモンを つかまえた！';
+
+  ball.classList.remove('ball-wobble');
+  void ball.offsetWidth; // アニメーション再生のためリフロー
+  ball.classList.add('ball-wobble');
+  playFlip();
+
+  setTimeout(() => {
+    const regionPool = POKEMON_LIST.filter(p => p.region === selectedRegion);
+    const pool = regionPool.length > 0 ? regionPool : POKEMON_LIST;
+    const caught = pool[Math.floor(Math.random() * pool.length)];
+    const newCount = addCaught(caught.id);
+
+    reveal.style.display = 'flex';
+    const img = document.getElementById('capture-poke-img');
+    const fb = document.getElementById('capture-poke-fallback');
+    setImgWithFallback(img, fb, caught);
+    document.getElementById('capture-poke-name').textContent = caught.name;
+
+    let msg;
+    if (newCount === 1) msg = `${caught.name}を つかまえた！`;
+    else if (newCount === 3) msg = `${caught.name}が 3びき あつまった！`;
+    else msg = `${caught.name} ${newCount}ひきめ！`;
+    document.getElementById('capture-poke-count-msg').textContent = msg;
+
+    const hint = document.getElementById('capture-evolve-hint');
+    hint.style.display = (newCount >= 3 && canEvolve(caught.id)) ? 'block' : 'none';
+
+    playPinPon();
+    const r = document.querySelector('.capture-poke-visual').getBoundingClientRect();
+    launchSparkles(r.left + r.width / 2, r.top + r.height / 2);
+  }, 900);
+}
+
+// ============================================================
+// ポケモンずかん（コレクション）画面
+// ============================================================
+// ずかん画面で選択中の地方（ホーム画面のゲーム開始用の選択とは別に
+// 保持する。最初はホーム画面の選択と同じ地方を表示する）
+let dexSelectedRegion = null;
+
+function renderRegionSummaryList() {
+  const collection = loadCollection();
+  const wrap = document.getElementById('region-summary-list');
+  wrap.innerHTML = '';
+  REGIONS.forEach(r => {
+    const ownedInRegion = POKEMON_LIST.filter(
+      p => p.region === r.key && (collection[p.id] || 0) > 0
+    ).length;
+
+    const row = document.createElement('div');
+    row.className = 'region-summary-row'
+      + (r.key === dexSelectedRegion ? ' selected' : '')
+      + (r.available ? '' : ' locked');
+    row.innerHTML = `
+      <span>${r.label}${r.available ? '' : '（近日追加）'}</span>
+      <span class="rs-count">${ownedInRegion} / ${r.total}</span>
+    `;
+    if (r.available) {
+      row.addEventListener('click', () => {
+        dexSelectedRegion = r.key;
+        renderRegionSummaryList();
+        renderDexGrid();
+      });
+    }
+    wrap.appendChild(row);
+  });
+}
+
+function renderDexGrid() {
+  const collection = loadCollection();
+  const grid = document.getElementById('dex-grid');
+  grid.innerHTML = '';
+
+  const regionPokemon = POKEMON_LIST.filter(p => p.region === dexSelectedRegion);
+  let ownedCount = 0;
+
+  regionPokemon.forEach(p => {
+    const count = collection[p.id] || 0;
+    if (count > 0) ownedCount++;
+    const evolvable = count >= 3 && canEvolve(p.id);
+
+    const card = document.createElement('div');
+    card.className = 'dex-card' + (count > 0 ? '' : ' unknown');
+    card.innerHTML = `
+      <span class="dex-num">#${String(p.id).padStart(3, '0')}</span>
+      <div class="dex-img-wrap">
+        ${count > 0
+          ? `<img class="dex-img"><span class="dex-emoji-fallback poke-emoji-fallback" style="display:none;">🐾</span>`
+          : `<span class="dex-unknown-mark">？</span>`}
+      </div>
+      <div class="dex-name">${count > 0 ? p.name : '？？？'}</div>
+      ${count > 0 ? `<span class="dex-count-badge">×${count}</span>` : ''}
+      ${evolvable ? `<span class="dex-evolve-badge">進化できる！</span><button class="dex-evolve-btn" data-id="${p.id}">進化する</button>` : ''}
+    `;
+    grid.appendChild(card);
+
+    if (count > 0) {
+      const img = card.querySelector('.dex-img');
+      const fb = card.querySelector('.dex-emoji-fallback');
+      setImgWithFallback(img, fb, p);
+    }
+  });
+
+  const dexRegionLabel = (REGIONS.find(r => r.key === dexSelectedRegion) || {}).label || dexSelectedRegion;
+  document.getElementById('dex-count-label').textContent =
+    `${dexRegionLabel}図鑑：${ownedCount} / ${regionPokemon.length} 匹 つかまえた！`;
+
+  grid.querySelectorAll('.dex-evolve-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      runEvolutionSequence(parseInt(btn.dataset.id, 10));
+    });
+  });
+}
+
+function renderCollectionScreen() {
+  if (!dexSelectedRegion) dexSelectedRegion = selectedRegion;
+  renderRegionSummaryList();
+  renderDexGrid();
+}
+
+// ============================================================
+// 進化演出・進化処理
+// ============================================================
+function runEvolutionSequence(baseId) {
+  const options = EVOLUTIONS[baseId] || [];
+  const collection = loadCollection();
+  if (options.length === 0 || (collection[baseId] || 0) < 3) return;
+
+  const base = getPokemonById(baseId);
+  const toId = options[Math.floor(Math.random() * options.length)];
+  const to = getPokemonById(toId);
+  if (!base || !to) return;
+
+  const overlay = document.getElementById('evolve-overlay');
+  const imgWrap = document.getElementById('evolve-visual-wrap');
+  const img = document.getElementById('evolve-img-before');
+  const fb = document.getElementById('evolve-img-fallback');
+  const stepText = document.getElementById('evolve-step-text');
+  const closeBtn = document.getElementById('evolve-close-btn');
+
+  clearTimeout(window._evolveTimer1);
+  clearTimeout(window._evolveTimer2);
+
+  closeBtn.style.display = 'none';
+  imgWrap.classList.remove('flashing');
+  setImgWithFallback(img, fb, base);
+  stepText.textContent = 'おや……？';
+  overlay.classList.add('show');
+
+  window._evolveTimer1 = setTimeout(() => {
+    stepText.textContent = `${base.name}の ようすが……！`;
+    imgWrap.classList.add('flashing');
+    playFlip();
+  }, 1200);
+
+  window._evolveTimer2 = setTimeout(() => {
+    consumeAndEvolve(baseId, toId);
+    imgWrap.classList.remove('flashing');
+    setImgWithFallback(img, fb, to);
+    stepText.textContent = `おめでとう！\n${base.name}は ${to.name}に しんかした！`;
+    playFinale();
+    const r = imgWrap.getBoundingClientRect();
+    launchSparkles(r.left + r.width / 2, r.top + r.height / 2);
+    closeBtn.style.display = 'inline-block';
+  }, 2600);
 }
 
 // ── イベント ──
 document.getElementById('retry-btn').addEventListener('click', () => startLevel(state.level));
 document.getElementById('level-select-btn').addEventListener('click', () => {
+  renderRegionPicker();
   renderLevelList();
   showScreen('home-screen');
 });
+document.getElementById('open-collection-btn').addEventListener('click', () => {
+  renderCollectionScreen();
+  showScreen('collection-screen');
+});
+document.getElementById('collection-home-btn').addEventListener('click', () => {
+  renderRegionPicker();
+  renderLevelList();
+  showScreen('home-screen');
+});
+document.getElementById('evolve-close-btn').addEventListener('click', () => {
+  document.getElementById('evolve-overlay').classList.remove('show');
+  renderCollectionScreen();
+});
 
 // ── 初期表示 ──
+renderRegionPicker();
 renderLevelList();
 showScreen('home-screen');
 </script>

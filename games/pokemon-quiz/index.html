@@ -259,7 +259,87 @@ h1 {
   min-height: 1.2em;
 }
 
-#quiz-screen { display: flex; flex-direction: column; }
+#quiz-screen { display: none; flex-direction: column; }
+
+/* ── 地方選択画面 ── */
+#start-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 10px 0 6px;
+}
+.quiz-region-picker-label {
+  font-size: 0.95rem;
+  font-weight: bold;
+  color: #7c3aed;
+}
+#quiz-region-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+.quiz-region-chip {
+  font-family: inherit;
+  font-size: 1.05rem;
+  font-weight: bold;
+  padding: 12px 26px;
+  border-radius: 999px;
+  border: 2px solid #d4aaff;
+  background: white;
+  color: #7c3aed;
+  cursor: pointer;
+  transition: transform 0.12s, background 0.15s, color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.quiz-region-chip.selected {
+  background: linear-gradient(150deg, #b26cff, #7c3aed);
+  color: white;
+  border-color: #7c3aed;
+}
+.quiz-region-chip.locked {
+  background: #f2f2f2;
+  color: #bbb;
+  border-color: #e0e0e0;
+  cursor: default;
+}
+.quiz-region-chip:not(.locked):hover { transform: translateY(-2px); }
+.quiz-region-chip:not(.locked):active { transform: translateY(1px); }
+
+#quiz-start-btn {
+  font-family: inherit;
+  font-size: 1.25rem;
+  font-weight: bold;
+  background: linear-gradient(150deg, #b26cff, #7c3aed);
+  color: white;
+  border: none;
+  border-radius: 20px;
+  padding: 18px 36px;
+  cursor: pointer;
+  box-shadow: 0 8px 0 #5b21b6, 0 10px 20px rgba(100,40,200,0.20);
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.12s;
+  letter-spacing: 1px;
+  -webkit-tap-highlight-color: transparent;
+}
+#quiz-start-btn:hover  { transform: translateY(-4px); }
+#quiz-start-btn:active { transform: translateY(5px); box-shadow: 0 2px 0 #5b21b6; }
+
+.quiz-region-link {
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: bold;
+  color: #9b59b6;
+  background: none;
+  border: 2px solid #e8d0ff;
+  border-radius: 999px;
+  padding: 10px 18px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.12s, background 0.15s;
+}
+.quiz-region-link:hover  { background: #f8f0ff; transform: translateY(-2px); }
+.quiz-region-link:active { transform: translateY(1px); }
 
 /* ── 結果画面 ── */
 #result-screen {
@@ -283,10 +363,31 @@ h1 {
 }
 #result-subtitle { font-size: 1.05rem; color: #999; }
 #result-stars {
-  font-size: 2.2rem;
-  letter-spacing: 5px;
-  word-break: break-all;
-  line-height: 1.6;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+.score-star-icon {
+  font-size: 3.4rem;
+  line-height: 1;
+}
+.score-fraction {
+  font-size: 1.7rem;
+  font-weight: bold;
+  color: #9b59b6;
+  letter-spacing: 1px;
+}
+.score-perfect-badge {
+  margin-top: 2px;
+  font-size: 1rem;
+  font-weight: bold;
+  color: #fff;
+  background: linear-gradient(135deg, #ffd54f, #ff9800);
+  padding: 6px 16px;
+  border-radius: 20px;
+  box-shadow: 0 3px 0 rgba(150,90,0,0.25);
 }
 #result-score {
   font-size: 1.3rem;
@@ -376,6 +477,14 @@ h1 {
 
 <div id="app">
 
+  <!-- ── 地方選択画面 ── -->
+  <div id="start-screen">
+    <h1>⚡ ポケモンクイズ ⚡</h1>
+    <div class="quiz-region-picker-label">🗺️ ちほうを えらんでね</div>
+    <div id="quiz-region-picker"></div>
+    <button id="quiz-start-btn">▶ クイズ スタート！</button>
+  </div>
+
   <!-- ── クイズ画面 ── -->
   <div id="quiz-screen">
     <h1>⚡ ポケモンクイズ ⚡</h1>
@@ -410,101 +519,76 @@ h1 {
     <div id="result-score"></div>
     <div class="result-btns">
       <button id="retry-btn">もういちどあそぶ 🔄</button>
+      <button id="change-region-btn" class="quiz-region-link">🗺️ ちほうを えらびなおす</button>
       <a id="home-btn" href="../../index.html">🏠 トップにもどる</a>
     </div>
   </div>
 
 </div>
 
+<script src="../../assets/data/pokemon/pokemon.js"></script>
+<script src="../../assets/data/pokemon/regions.js"></script>
 <script>
 // ============================================================
-// ポケモンデータ（10問）
-// 画像: PokéAPI 公式アートワーク（GitHub Raw）
+// 出題データ
 // ============================================================
-const POKEAPI = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/';
+// ポケモン記憶ゲーム（games/pokemon-memory）と同じ共有データ・
+// 共有画像を使用しています（assets/data/pokemon/pokemon.js、
+// assets/images/pokemon/）。ここでは新しく別データを作らず、
+// そのまま POKEMON_LIST を出題プールとして使います。
+//
+// 画像: ローカル保存済みの画像を参照する（記憶ゲームと共用、重複保存なし）。
+// 画像が無い/読み込みに失敗した場合は絵文字プレースホルダーに
+// 自動フォールバックする（既存の仕組みをそのまま利用）。
+const IMG_BASE = '../../assets/images/pokemon/';
+const QUESTIONS_PER_SESSION = 10;
 
-const ALL_QUESTIONS = [
-  {
-    id: 25,
-    emoji: '⚡',
-    name: 'ぴかちゅう',
-    question: 'このポケモンは だれ？',
-    choices: ['ぴかちゅう', 'いーぶい', 'ぷりん'],
-    answer: 0,
-  },
-  {
-    id: 4,
-    emoji: '🔥',
-    name: 'ひとかげ',
-    question: 'しっぽに ほのおがある ポケモンは だれ？',
-    choices: ['ふしぎだね', 'ひとかげ', 'ぜにがめ'],
-    answer: 1,
-  },
-  {
-    id: 1,
-    emoji: '🌿',
-    name: 'ふしぎだね',
-    question: 'せなかに たねを せおっている ポケモンは だれ？',
-    choices: ['ふしぎだね', 'ぜにがめ', 'こだっく'],
-    answer: 0,
-  },
-  {
-    id: 7,
-    emoji: '💧',
-    name: 'ぜにがめ',
-    question: 'こうらを せおった かめの ポケモンは だれ？',
-    choices: ['こいきんぐ', 'ひとかげ', 'ぜにがめ'],
-    answer: 2,
-  },
-  {
-    id: 133,
-    emoji: '🦊',
-    name: 'いーぶい',
-    question: 'フワフワのしっぽが かわいい ポケモンは だれ？',
-    choices: ['ぷりん', 'いーぶい', 'ぴかちゅう'],
-    answer: 1,
-  },
-  {
-    id: 39,
-    emoji: '🎤',
-    name: 'ぷりん',
-    question: 'うたごえで ねむらせる まるい ポケモンは だれ？',
-    choices: ['ぷりん', 'いーぶい', 'こだっく'],
-    answer: 0,
-  },
-  {
-    id: 143,
-    emoji: '😴',
-    name: 'かびごん',
-    question: 'たべてばかりで よくねる おおきな ポケモンは だれ？',
-    choices: ['こだっく', 'かびごん', 'こいきんぐ'],
-    answer: 1,
-  },
-  {
-    id: 54,
-    emoji: '🦆',
-    name: 'こだっく',
-    question: 'あたまをかかえている あひるの ポケモンは だれ？',
-    choices: ['ぷりん', 'こいきんぐ', 'こだっく'],
-    answer: 2,
-  },
-  {
-    id: 129,
-    emoji: '🐟',
-    name: 'こいきんぐ',
-    question: 'はねるしか できない さかなの ポケモンは だれ？',
-    choices: ['こいきんぐ', 'ぜにがめ', 'ふしぎだね'],
-    answer: 0,
-  },
-  {
-    id: 6,
-    emoji: '🐉',
-    name: 'りざーどん',
-    question: 'おおきなつばさで そらを とぶ ポケモンは だれ？',
-    choices: ['ぴかちゅう', 'いーぶい', 'りざーどん'],
-    answer: 2,
-  },
-];
+// ============================================================
+// 地方（リージョン）選択
+// ============================================================
+// ポケモン記憶ゲーム（games/pokemon-memory）と同じ regions.js を共有。
+// 選んだ地方のポケモンだけを出題プールとして使う。今後ホウエンなど
+// 他の地方を追加する際は、regions.js の available を true にするだけで
+// この選択画面にも自動的に反映される。
+const QUIZ_REGION_KEY = 'pkquiz_selected_region_v1';
+
+function firstAvailableQuizRegion() {
+  return (REGIONS.find(r => r.available) || REGIONS[0]).key;
+}
+function loadSelectedQuizRegion() {
+  const saved = localStorage.getItem(QUIZ_REGION_KEY);
+  const region = REGIONS.find(r => r.key === saved && r.available);
+  return region ? region.key : firstAvailableQuizRegion();
+}
+function saveSelectedQuizRegion(key) {
+  localStorage.setItem(QUIZ_REGION_KEY, key);
+}
+let quizRegion = loadSelectedQuizRegion();
+
+function getQuizPool() {
+  return POKEMON_LIST.filter(p => p.region === quizRegion);
+}
+
+function renderQuizRegionPicker() {
+  const wrap = document.getElementById('quiz-region-picker');
+  wrap.innerHTML = '';
+  REGIONS.forEach(r => {
+    const chip = document.createElement('button');
+    chip.className = 'quiz-region-chip'
+      + (r.key === quizRegion ? ' selected' : '')
+      + (r.available ? '' : ' locked');
+    chip.textContent = r.available ? r.label : `${r.label} 🔒`;
+    chip.disabled = !r.available;
+    if (r.available) {
+      chip.addEventListener('click', () => {
+        quizRegion = r.key;
+        saveSelectedQuizRegion(r.key);
+        renderQuizRegionPicker();
+      });
+    }
+    wrap.appendChild(chip);
+  });
+}
 
 // ============================================================
 // 音（Web Audio API）
@@ -604,12 +688,41 @@ function shuffle(arr) {
   return a;
 }
 
+// 選んだ地方のポケモン（getQuizPool()）から重複なしで10匹を選び、
+// 3択クイズを作る。選択肢は「正解1匹 + 他からランダムに2匹（重複なし）」
+// で構成する。
+function buildQuizQuestions() {
+  const pool = getQuizPool();
+  const count = Math.min(QUESTIONS_PER_SESSION, pool.length);
+  const chosen = shuffle(pool).slice(0, count);
+  return chosen.map(p => {
+    const others = shuffle(pool.filter(o => o.id !== p.id)).slice(0, 2);
+    const optionPokemon = shuffle([p, ...others]);
+    return {
+      id: p.id,
+      name: p.name,
+      image: p.image,
+      question: 'このポケモンは だれ？',
+      choices: optionPokemon.map(o => o.name),
+      answer: optionPokemon.findIndex(o => o.id === p.id),
+    };
+  });
+}
+
 function startQuiz() {
-  questions = shuffle(ALL_QUESTIONS);
+  questions = buildQuizQuestions();
   current = 0; score = 0;
+  document.getElementById('start-screen').style.display  = 'none';
   document.getElementById('result-screen').style.display = 'none';
   document.getElementById('quiz-screen').style.display  = 'flex';
   showQuestion();
+}
+
+function showStartScreen() {
+  document.getElementById('quiz-screen').style.display   = 'none';
+  document.getElementById('result-screen').style.display = 'none';
+  document.getElementById('start-screen').style.display   = 'flex';
+  renderQuizRegionPicker();
 }
 
 function loadPokemonImage(q) {
@@ -621,7 +734,7 @@ function loadPokemonImage(q) {
   void frame.offsetWidth;
   frame.style.animation = '';
 
-  fb.textContent   = q.emoji;
+  fb.textContent   = '🐾';
   fb.style.display = 'none';
   img.style.display = 'block';
   img.alt = q.name;
@@ -630,7 +743,7 @@ function loadPokemonImage(q) {
     img.style.display = 'none';
     fb.style.display  = 'block';
   };
-  img.src = POKEAPI + q.id + '.png';
+  img.src = IMG_BASE + q.image;
 }
 
 function showQuestion() {
@@ -723,8 +836,13 @@ function showResult() {
 
   document.getElementById('result-emoji').textContent    = trophy;
   document.getElementById('result-subtitle').textContent = subtitle;
-  document.getElementById('result-stars').textContent    =
-    '⭐'.repeat(score) + '☆'.repeat(questions.length - score);
+  {
+    const perfect = score === questions.length;
+    document.getElementById('result-stars').innerHTML =
+      '<div class="score-star-icon">⭐</div>' +
+      `<div class="score-fraction">${score} / ${questions.length}</div>` +
+      (perfect ? '<div class="score-perfect-badge">🎉 ぜんぶ せいかい！</div>' : '');
+  }
   document.getElementById('result-score').textContent    =
     `${questions.length}もんちゅう ${score}もん せいかい！`;
 
@@ -742,8 +860,10 @@ function showResult() {
   });
 });
 document.getElementById('retry-btn').addEventListener('click', startQuiz);
+document.getElementById('quiz-start-btn').addEventListener('click', startQuiz);
+document.getElementById('change-region-btn').addEventListener('click', showStartScreen);
 
-startQuiz();
+showStartScreen();
 </script>
 </body>
 </html>

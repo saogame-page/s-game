@@ -303,13 +303,31 @@ h1 {
 
 #result-stars {
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
-  flex-wrap: nowrap;   /* 絶対に1行に収める */
-  gap: 2px;
-  font-size: 1.9rem;   /* 10個が横に確実収まるサイズ */
-  line-height: 1;
+  gap: 4px;
   width: 100%;
+}
+.score-star-icon {
+  font-size: 3.4rem;
+  line-height: 1;
+}
+.score-fraction {
+  font-size: 1.7rem;
+  font-weight: bold;
+  color: #ff7f50;
+  letter-spacing: 1px;
+}
+.score-perfect-badge {
+  margin-top: 2px;
+  font-size: 1rem;
+  font-weight: bold;
+  color: #fff;
+  background: linear-gradient(135deg, #ffd54f, #ff9800);
+  padding: 6px 16px;
+  border-radius: 20px;
+  box-shadow: 0 3px 0 rgba(150,90,0,0.25);
 }
 
 #result-score {
@@ -811,9 +829,13 @@ function showResult() {
 
   document.getElementById('result-emoji').textContent    = trophy;
   document.getElementById('result-subtitle').textContent = subtitle;
-  document.getElementById('result-stars').innerHTML =
-    Array.from({length: score}, () => '<span>⭐</span>').join('') +
-    Array.from({length: questions.length - score}, () => '<span>☆</span>').join('');
+  {
+    const perfect = score === questions.length;
+    document.getElementById('result-stars').innerHTML =
+      '<div class="score-star-icon">⭐</div>' +
+      `<div class="score-fraction">${score} / ${questions.length}</div>` +
+      (perfect ? '<div class="score-perfect-badge">🎉 ぜんぶ せいかい！</div>' : '');
+  }
   document.getElementById('result-score').textContent    =
     `${questions.length}もんちゅう ${score}もん せいかい！`;
 

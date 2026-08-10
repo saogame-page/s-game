@@ -15,104 +15,193 @@
     <p class="site-desc">小さな子どもでも遊べる、かんたんでかわいい無料ゲーム集</p>
   </header>
 
-  <main class="games-section">
-    <p class="section-title">🎮 ゲームをえらんでね 🎮</p>
-    <div class="games-grid" id="gamesGrid">
+  <!-- ============================================================
+       ページ全体レイアウト（メインコンテンツ + サイドバー）
+       将来、広告枠やサイドバーの中身を増やす場合は .sidebar 内に
+       .sidebar-widget を追加するだけで拡張できる構造にしています。
+       ============================================================ -->
+  <div class="page-layout">
 
-      <!-- どうぶつ3択クイズ -->
-      <a class="game-card" href="games/animal-quiz/index.html">
-        <span class="game-card-emoji">🐾</span>
-        <span class="game-card-tag">クイズ ・ 3〜6さい</span>
-        <span class="game-card-title">どうぶつ3択クイズ</span>
-        <p class="game-card-desc">どうぶつのなまえをあてよう！<br>たのしい3たくクイズだよ🎉</p>
-        <span class="game-card-btn">あそぶ ▶</span>
-      </a>
+    <main class="main-content">
 
-      <!-- もぐらたたき -->
-      <a class="game-card" href="games/mogura-tataki/index.html">
-        <span class="game-card-emoji">🔨</span>
-        <span class="game-card-tag">アクション ・ 3〜6さい</span>
-        <span class="game-card-title">もぐらたたき</span>
-        <p class="game-card-desc">でてきたもぐらをたたこう！<br>30びょうでなんびきたたけるかな？🐾</p>
-        <span class="game-card-btn">あそぶ ▶</span>
-      </a>
+      <!-- ── 3〜5さい向け ── -->
+      <section class="category-section" id="cat-age-3-5" aria-labelledby="cat-age-3-5-heading">
+        <h2 class="category-heading" id="cat-age-3-5-heading">
+          <span class="category-heading-icon">🧸</span>3〜5さい向け
+        </h2>
+        <p class="category-desc">はじめてでも直感的にあそべるゲームだよ</p>
+        <div class="games-grid">
 
-      <!-- 国旗神経衰弱 -->
-      <a class="game-card" href="games/kokki-memory/index.html">
-        <span class="game-card-emoji">🌍</span>
-        <span class="game-card-tag">きおく ・ 6〜10さい</span>
-        <span class="game-card-title">国旗神経衰弱</span>
-        <p class="game-card-desc">せかいの国旗をおぼえよう！<br>おなじ国旗をみつけてね🏳️</p>
-        <span class="game-card-btn">あそぶ ▶</span>
-      </a>
+          <!-- どうぶつ3択クイズ -->
+          <a class="game-card" href="games/animal-quiz/index.html">
+            <span class="game-card-emoji">🐾</span>
+            <span class="game-card-tag">クイズ ・ 3〜6さい</span>
+            <span class="game-card-title">どうぶつ3択クイズ</span>
+            <p class="game-card-desc">どうぶつのなまえをあてよう！<br>たのしい3たくクイズだよ🎉</p>
+            <span class="game-card-btn">あそぶ ▶</span>
+          </a>
 
-      <!-- ポケモンクイズ -->
-      <a class="game-card" href="games/pokemon-quiz/index.html">
-        <span class="game-card-emoji">⚡</span>
-        <span class="game-card-tag">クイズ ・ 4〜8さい</span>
-        <span class="game-card-title">ポケモンクイズ</span>
-        <p class="game-card-desc">ポケモンのなまえをあてよう！<br>10ひきのポケモンがでてくるよ⚡</p>
-        <span class="game-card-btn">あそぶ ▶</span>
-      </a>
+          <!-- もぐらたたき -->
+          <a class="game-card" href="games/mogura-tataki/index.html">
+            <span class="game-card-emoji">🔨</span>
+            <span class="game-card-tag">アクション ・ 3〜6さい</span>
+            <span class="game-card-title">もぐらたたき</span>
+            <p class="game-card-desc">でてきたもぐらをたたこう！<br>30びょうでなんびきたたけるかな？🐾</p>
+            <span class="game-card-btn">あそぶ ▶</span>
+          </a>
 
-      <!-- 漢字クイズ -->
-      <a class="game-card" href="games/kanji-grade1/index.html">
-        <span class="game-card-emoji">✏️</span>
-        <span class="game-card-tag">クイズ ・ 6〜8さい</span>
-        <span class="game-card-title">小学1年生 漢字クイズ</span>
-        <p class="game-card-desc">かんじのよみかたをあてよう！<br>🦊キツネとぼうけんにでかけよう！</p>
-        <span class="game-card-btn">あそぶ ▶</span>
-      </a>
+          <!-- 惑星タッチ -->
+          <a class="game-card" href="games/planet-touch/index.html">
+            <span class="game-card-emoji">🪐</span>
+            <span class="game-card-tag">アクション ・ 4〜8さい</span>
+            <span class="game-card-title">惑星タッチ</span>
+            <p class="game-card-desc">惑星をタップして点数を集めよう！<br>遊びながら惑星の名前も覚えられるよ！</p>
+            <span class="game-card-btn">あそぶ ▶</span>
+          </a>
 
-      <!-- 惑星タッチ -->
-      <a class="game-card" href="games/planet-touch/index.html">
-        <span class="game-card-emoji">🪐</span>
-        <span class="game-card-tag">アクション ・ 4〜8さい</span>
-        <span class="game-card-title">惑星タッチ</span>
-        <p class="game-card-desc">惑星をタップして点数を集めよう！<br>遊びながら惑星の名前も覚えられるよ！</p>
-        <span class="game-card-btn">あそぶ ▶</span>
-      </a>
+        </div>
+      </section>
 
-      <!-- English Picture Quiz -->
-      <a class="game-card" href="games/english-picture-quiz/index.html">
-        <span class="game-card-emoji">🐶</span>
-        <span class="game-card-tag">クイズ ・ 4〜7さい</span>
-        <span class="game-card-title">English Picture Quiz</span>
-        <p class="game-card-desc">えいごの3たくクイズにちょうせん！<br>カードをあつめよう✨</p>
-        <span class="game-card-btn">あそぶ ▶</span>
-      </a>
+      <!-- ── 4〜6さい向け ── -->
+      <section class="category-section" id="cat-age-4-6" aria-labelledby="cat-age-4-6-heading">
+        <h2 class="category-heading" id="cat-age-4-6-heading">
+          <span class="category-heading-icon">🧠</span>4〜6さい向け
+        </h2>
+        <p class="category-desc">きおく力・はんだん力・さがす力をつかうゲームだよ</p>
+        <div class="games-grid">
 
-      <!-- 小学2年生 漢字クイズ -->
-      <a class="game-card" href="games/kanji-grade2/index.html">
-        <span class="game-card-emoji">✏️</span>
-        <span class="game-card-tag">クイズ ・ 7〜9さい</span>
-        <span class="game-card-title">小学2年生 漢字クイズ</span>
-        <p class="game-card-desc">かんじのよみかたをあてよう！<br>🦊キツネとぼうけんにでかけよう！</p>
-        <span class="game-card-btn">あそぶ ▶</span>
-      </a>
+          <!-- 国旗神経衰弱 -->
+          <a class="game-card" href="games/kokki-memory/index.html">
+            <span class="game-card-emoji">🌍</span>
+            <span class="game-card-tag">きおく ・ 6〜10さい</span>
+            <span class="game-card-title">国旗神経衰弱</span>
+            <p class="game-card-desc">せかいの国旗をおぼえよう！<br>おなじ国旗をみつけてね🏳️</p>
+            <span class="game-card-btn">あそぶ ▶</span>
+          </a>
 
-      <!-- サイトワード フラッシュカード -->
-      <a class="game-card" href="games/sight-word-flashcards/index.html">
-        <span class="game-card-emoji">🗂️</span>
-        <span class="game-card-tag">がくしゅう ・ 4〜7さい</span>
-        <span class="game-card-title">サイトワード フラッシュカード</span>
-        <p class="game-card-desc">えいごのカードがつぎつぎでてくるよ！<br>みて・きいておぼえよう👀🔊</p>
-        <span class="game-card-btn">あそぶ ▶</span>
-      </a>
+        </div>
+      </section>
 
-      <!-- ポケモン記憶ゲーム -->
-      <a class="game-card" href="games/pokemon-memory/index.html">
-        <span class="game-card-emoji">🧠</span>
-        <span class="game-card-tag">きおく ・ 5〜9さい</span>
-        <span class="game-card-title">ポケモン記憶ゲーム</span>
-        <p class="game-card-desc">ならんだポケモンの じゅんばんを おぼえよう！<br>レベルアップで もっとむずかしく🔥</p>
-        <span class="game-card-btn">あそぶ ▶</span>
-      </a>
+      <!-- ── 6〜8さい向け ── -->
+      <section class="category-section" id="cat-age-6-8" aria-labelledby="cat-age-6-8-heading">
+        <h2 class="category-heading" id="cat-age-6-8-heading">
+          <span class="category-heading-icon">📚</span>6〜8さい向け
+        </h2>
+        <p class="category-desc">がくしゅう要素の強いゲームだよ</p>
+        <div class="games-grid">
 
-    </div>
-  </main>
+          <!-- 漢字クイズ -->
+          <a class="game-card" href="games/kanji-grade1/index.html">
+            <span class="game-card-emoji">✏️</span>
+            <span class="game-card-tag">クイズ ・ 6〜8さい</span>
+            <span class="game-card-title">小学1年生 漢字クイズ</span>
+            <p class="game-card-desc">かんじのよみかたをあてよう！<br>🦊キツネとぼうけんにでかけよう！</p>
+            <span class="game-card-btn">あそぶ ▶</span>
+          </a>
+
+          <!-- 小学2年生 漢字クイズ -->
+          <a class="game-card" href="games/kanji-grade2/index.html">
+            <span class="game-card-emoji">✏️</span>
+            <span class="game-card-tag">クイズ ・ 7〜9さい</span>
+            <span class="game-card-title">小学2年生 漢字クイズ</span>
+            <p class="game-card-desc">かんじのよみかたをあてよう！<br>🦊キツネとぼうけんにでかけよう！</p>
+            <span class="game-card-btn">あそぶ ▶</span>
+          </a>
+
+          <!-- English Picture Quiz -->
+          <a class="game-card" href="games/english-picture-quiz/index.html">
+            <span class="game-card-emoji">🐶</span>
+            <span class="game-card-tag">クイズ ・ 4〜7さい</span>
+            <span class="game-card-title">English Picture Quiz</span>
+            <p class="game-card-desc">えいごの3たくクイズにちょうせん！<br>カードをあつめよう✨</p>
+            <span class="game-card-btn">あそぶ ▶</span>
+          </a>
+
+          <!-- サイトワード フラッシュカード -->
+          <a class="game-card" href="games/sight-word-flashcards/index.html">
+            <span class="game-card-emoji">🗂️</span>
+            <span class="game-card-tag">がくしゅう ・ 4〜7さい</span>
+            <span class="game-card-title">サイトワード フラッシュカード</span>
+            <p class="game-card-desc">えいごのカードがつぎつぎでてくるよ！<br>みて・きいておぼえよう👀🔊</p>
+            <span class="game-card-btn">あそぶ ▶</span>
+          </a>
+
+        </div>
+      </section>
+
+      <!-- ── ポケモンシリーズ（年齢別とは別枠） ── -->
+      <section class="category-section pokemon-section" id="cat-pokemon" aria-labelledby="cat-pokemon-heading">
+        <h2 class="category-heading pokemon-heading" id="cat-pokemon-heading">
+          <span class="category-heading-icon">⚡</span>ポケモンシリーズ
+        </h2>
+        <p class="category-desc">カントー・ジョウトのポケモンたちと あそぼう！</p>
+        <div class="games-grid">
+
+          <!-- ポケモンクイズ -->
+          <a class="game-card" href="games/pokemon-quiz/index.html">
+            <span class="game-card-emoji">⚡</span>
+            <span class="game-card-tag">クイズ ・ 4〜8さい</span>
+            <span class="game-card-title">ポケモンクイズ</span>
+            <p class="game-card-desc">ポケモンのなまえをあてよう！<br>10ひきのポケモンがでてくるよ⚡</p>
+            <span class="game-card-btn">あそぶ ▶</span>
+          </a>
+
+          <!-- ポケモン記憶ゲーム -->
+          <a class="game-card" href="games/pokemon-memory/index.html">
+            <span class="game-card-emoji">🧠</span>
+            <span class="game-card-tag">きおく ・ 5〜9さい</span>
+            <span class="game-card-title">ポケモン記憶ゲーム</span>
+            <p class="game-card-desc">ならんだポケモンの じゅんばんを おぼえよう！<br>レベルアップで もっとむずかしく🔥</p>
+            <span class="game-card-btn">あそぶ ▶</span>
+          </a>
+
+        </div>
+      </section>
+
+    </main>
+
+    <!-- ============================================================
+         サイドバー（PC：右側固定 / スマホ：メインの下に回る）
+         今回は本格的な広告は入れず、将来追加しやすい枠だけ用意。
+         ============================================================ -->
+    <aside class="sidebar" aria-label="サイドバー">
+
+      <div class="sidebar-widget">
+        <h3 class="sidebar-widget-title">✨ おすすめゲーム</h3>
+        <ul class="sidebar-list">
+          <li><a href="games/pokemon-memory/index.html">🧠 ポケモン記憶ゲーム</a></li>
+          <li><a href="games/animal-quiz/index.html">🐾 どうぶつ3択クイズ</a></li>
+        </ul>
+      </div>
+
+      <div class="sidebar-widget">
+        <h3 class="sidebar-widget-title">🆕 新着ゲーム</h3>
+        <ul class="sidebar-list">
+          <li><a href="games/pokemon-quiz/index.html">⚡ ポケモンクイズ（ジョウト追加！）</a></li>
+          <li><a href="games/planet-touch/index.html">🪐 惑星タッチ</a></li>
+        </ul>
+      </div>
+
+      <div class="sidebar-widget">
+        <h3 class="sidebar-widget-title">❓ あそびかた</h3>
+        <p class="sidebar-text">すきなゲームの カードを タップ（クリック）すると あそべるよ。おうちのひとと いっしょに たのしんでね😊</p>
+      </div>
+
+      <div class="sidebar-widget sidebar-ad-slot" aria-hidden="true">
+        <p class="sidebar-ad-label">広告スペース<br>（じゅんびちゅう）</p>
+      </div>
+
+    </aside>
+
+  </div>
 
   <footer class="site-footer">
+    <nav class="footer-links" aria-label="サイト情報リンク">
+      <a href="about.html">このサイトについて</a>
+      <a href="privacy.html">プライバシーポリシー</a>
+      <a href="terms.html">利用規約</a>
+      <a href="contact.html">お問い合わせ</a>
+    </nav>
     <p>© ちびっこミニゲームランド</p>
   </footer>
 

@@ -18,8 +18,13 @@
 3. スクリプトを実行する
 
    ```
-   node download-images.js
+   node download-images.js            # 全地方をまとめて取得
+   node download-images.js kanto      # カントー地方だけ取得
+   node download-images.js johto      # ジョウト地方だけ取得
+   node download-images.js all        # 全地方をまとめて取得（明示指定）
    ```
+
+   引数を省略した場合は `all` と同じ扱いになります。
 
 4. `assets/images/pokemon/` フォルダに `001.png` のような画像が
    保存されます（ファイル名は図鑑番号を3桁ゼロ埋めしたもの）。
@@ -41,8 +46,10 @@
 
 ## 今後ポケモンを追加したいとき
 
-1. `games/pokemon-memory/data/pokemon.js` に
-   `{ id, name, types, image }` を1件追加する
+1. `assets/data/pokemon/pokemon.js` に
+   `{ id, name, types, region, image }` を1件追加する
+   （このファイルは `games/pokemon-memory` と `games/pokemon-quiz` の
+   両方で共用しています。1箇所編集するだけで両方に反映されます）
 2. もう一度 `node download-images.js` を実行する
    （すでにある画像はスキップされ、新しく追加した分だけ取得されます）
 

@@ -81,7 +81,7 @@ body > * { position: relative; z-index: 1; }
   line-height: 1.8;
 }
 
-/* ---- section title ---- */
+/* ---- section title (legacy, kept for compatibility) ---- */
 .section-title {
   font-size: 1.15rem;
   font-weight: bold;
@@ -91,17 +91,83 @@ body > * { position: relative; z-index: 1; }
   letter-spacing: 3px;
 }
 
-/* ---- games grid ---- */
-.games-section {
-  max-width: 880px;
+/* ============================================================
+   ページ全体レイアウト（メインコンテンツ + サイドバー）
+   ============================================================ */
+.page-layout {
+  max-width: 1180px;
   margin: 0 auto;
-  padding: 16px 20px 64px;
+  padding: 16px 20px 24px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 40px;
+  align-items: start;
 }
 
+.main-content {
+  min-width: 0; /* grid item がはみ出さないように */
+}
+
+/* ---- カテゴリ見出し ---- */
+.category-section {
+  margin: 0 0 56px;
+}
+
+.category-section:last-child { margin-bottom: 0; }
+
+.category-heading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: clamp(1.15rem, 3.4vw, 1.5rem);
+  font-weight: bold;
+  color: var(--text-dark);
+  text-align: center;
+  margin: 0 0 8px;
+  letter-spacing: 1px;
+}
+
+.category-heading-icon {
+  font-size: 1.3em;
+  line-height: 1;
+}
+
+.category-desc {
+  text-align: center;
+  font-size: 0.88rem;
+  color: var(--text-light);
+  margin: 0 0 24px;
+}
+
+/* ---- ポケモンシリーズ（別枠で少し目立たせる） ---- */
+.pokemon-section {
+  background: linear-gradient(160deg, rgba(255,246,200,0.65), rgba(210,230,255,0.55));
+  border: 3px solid #ffd54f;
+  border-radius: 28px;
+  padding: 30px 20px 34px;
+  box-shadow: 0 8px 30px rgba(255,180,50,0.14);
+}
+
+.pokemon-heading {
+  color: #9a6b00;
+}
+
+.pokemon-section .category-desc { color: #a88a3a; }
+
+/* ---- games grid ---- */
 .games-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: 1fr;
   gap: 22px;
+}
+
+@media (min-width: 620px) {
+  .games-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (min-width: 900px) {
+  .games-grid { grid-template-columns: repeat(3, 1fr); }
 }
 
 /* ---- game card ---- */
@@ -188,6 +254,100 @@ body > * { position: relative; z-index: 1; }
   pointer-events: none;
 }
 
+/* ============================================================
+   サイドバー（PC：右カラム / スマホ：メインコンテンツの下）
+   将来、広告枠を追加する場合は .sidebar-widget を増やすだけでOK。
+   ============================================================ */
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.sidebar-widget {
+  background: var(--white-card);
+  border-radius: 20px;
+  box-shadow: var(--shadow-card);
+  padding: 20px 18px;
+}
+
+.sidebar-widget-title {
+  font-size: 0.98rem;
+  font-weight: bold;
+  color: var(--text-dark);
+  margin: 0 0 12px;
+}
+
+.sidebar-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sidebar-list a {
+  display: block;
+  font-size: 0.88rem;
+  font-weight: bold;
+  color: var(--text-mid);
+  padding: 8px 10px;
+  border-radius: 12px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.sidebar-list a:hover {
+  background: #fff0f5;
+  color: #ff6f91;
+}
+
+.sidebar-text {
+  font-size: 0.85rem;
+  color: var(--text-mid);
+  line-height: 1.7;
+}
+
+.sidebar-ad-slot {
+  border: 2px dashed #ccc;
+  background: rgba(255,255,255,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  box-shadow: none;
+}
+
+.sidebar-ad-label {
+  font-size: 0.8rem;
+  color: var(--text-light);
+  text-align: center;
+  line-height: 1.6;
+}
+
+/* ---- 仮ページ（このサイトについて／プライバシーポリシー等） ---- */
+.legal-page {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 8px 20px 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.legal-page .back-btn { align-self: flex-start; }
+
+.legal-card {
+  background: var(--white-card);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  padding: 28px 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  font-size: 0.92rem;
+  line-height: 1.9;
+  color: var(--text-mid);
+}
+
 /* ---- footer ---- */
 .site-footer {
   text-align: center;
@@ -195,6 +355,23 @@ body > * { position: relative; z-index: 1; }
   font-size: 0.82rem;
   color: var(--text-light);
 }
+
+.footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 20px;
+  margin-bottom: 12px;
+}
+
+.footer-links a {
+  font-size: 0.82rem;
+  font-weight: bold;
+  color: var(--text-mid);
+  transition: color 0.15s;
+}
+
+.footer-links a:hover { color: #ff6f91; }
 
 /* ---- back button (game pages) ---- */
 .back-btn {
@@ -224,8 +401,18 @@ body > * { position: relative; z-index: 1; }
 .back-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #ddd; }
 
 /* ---- responsive ---- */
+
+/* PC：メイン＋サイドバーを横並びに（900px未満はサイドバーがメインの下） */
+@media (min-width: 900px) {
+  .page-layout {
+    grid-template-columns: 1fr 280px;
+    gap: 48px;
+  }
+}
+
 @media (max-width: 480px) {
   .site-header { padding: 36px 16px 20px; }
-  .games-section { padding: 8px 14px 48px; }
-  .games-grid { grid-template-columns: 1fr; }
+  .page-layout { padding: 8px 14px 48px; gap: 32px; }
+  .category-section { margin-bottom: 40px; }
+  .pokemon-section { padding: 24px 16px 28px; }
 }

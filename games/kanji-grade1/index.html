@@ -388,10 +388,31 @@ body {
   width: 100%;
 }
 #resultStars {
-  font-size: 2rem;
-  letter-spacing: 4px;
-  word-break: break-all;
-  line-height: 1.5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+.score-star-icon {
+  font-size: 3.4rem;
+  line-height: 1;
+}
+.score-fraction {
+  font-size: 1.7rem;
+  font-weight: bold;
+  color: #2d6a2d;
+  letter-spacing: 1px;
+}
+.score-perfect-badge {
+  margin-top: 2px;
+  font-size: 1rem;
+  font-weight: bold;
+  color: #fff;
+  background: linear-gradient(135deg, #ffd54f, #ff9800);
+  padding: 6px 16px;
+  border-radius: 20px;
+  box-shadow: 0 3px 0 rgba(150,90,0,0.25);
 }
 #resultScore { font-size: 1.25rem; color: #444; }
 
@@ -887,7 +908,13 @@ function showResult() {
   document.getElementById('resultEmoji').textContent    = trophy;
   document.getElementById('resultTitle').textContent    = title;
   document.getElementById('resultSubtitle').textContent = subtitle;
-  document.getElementById('resultStars').textContent    = '⭐'.repeat(score) + '☆'.repeat(10 - score);
+  {
+    const perfect = score === 10;
+    document.getElementById('resultStars').innerHTML =
+      '<div class="score-star-icon">⭐</div>' +
+      `<div class="score-fraction">${score} / 10</div>` +
+      (perfect ? '<div class="score-perfect-badge">🎉 ぜんぶ せいかい！</div>' : '');
+  }
   document.getElementById('resultScore').textContent    = `10もんちゅう ${score}もん せいかい！`;
   document.getElementById('resultMapDesc').textContent  =
     score === 10 ? 'ゴールたっせい！🏆' : `${score}ます すすんだよ！🦊`;
