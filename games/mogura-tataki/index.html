@@ -94,6 +94,26 @@ h1 {
   transition: width 0.95s linear;
 }
 
+/* ゲーム中だけ表示する中断ボタン */
+.quit-game-btn {
+  margin: 0 auto 10px;
+  padding: 8px 18px;
+  border: 2px solid rgba(255,255,255,0.9);
+  border-radius: 999px;
+  background: rgba(255,255,255,0.88);
+  color: #9a7777;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.12);
+  transition: transform 0.12s, background 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.quit-game-btn:hover { background: #fff; transform: translateY(-1px); }
+.quit-game-btn:active { transform: translateY(1px); }
+.quit-game-btn.hidden { display: none; }
+
 /* ================================================================
    フィールド（木の板）
 ================================================================ */
@@ -448,6 +468,8 @@ h1 {
   </div>
 </div>
 
+<button class="quit-game-btn hidden" id="btn-quit" type="button">途中でやめる</button>
+
 <!-- スタートオーバーレイ -->
 <div class="overlay" id="ov-start">
   <div class="card">
@@ -551,6 +573,7 @@ function startGame() {
   updateHUD();
   document.getElementById('ov-start').classList.add('hidden');
   document.getElementById('ov-result').classList.add('hidden');
+  document.getElementById('btn-quit').classList.remove('hidden');
 
   gameActive = true;
 
@@ -740,6 +763,7 @@ function playEnd() {
 // ============================================================
 function endGame() {
   gameActive = false;
+  document.getElementById('btn-quit').classList.add('hidden');
   clearInterval(clockTimer);
   spawnTimers.forEach(clearTimeout);
   spawnTimers = [];
@@ -750,6 +774,30 @@ function endGame() {
     showResult();
     playEnd();
   }, 500);
+}
+
+// ============================================================
+//  途中でやめる
+// ============================================================
+function quitGame() {
+  if (!gameActive) return;
+
+  gameActive = false;
+  clearInterval(clockTimer);
+  spawnTimers.forEach(clearTimeout);
+  spawnTimers = [];
+  holes.forEach(h => {
+    clearTimeout(h.hitTimer);
+    clearTimeout(h.downTimer);
+    lowerMole(h, true);
+  });
+
+  score = 0;
+  timeLeft = TOTAL_SEC;
+  updateHUD();
+  document.getElementById('btn-quit').classList.add('hidden');
+  document.getElementById('ov-result').classList.add('hidden');
+  document.getElementById('ov-start').classList.remove('hidden');
 }
 
 // ============================================================
@@ -788,6 +836,7 @@ function getComment(s) {
 // ============================================================
 document.getElementById('btn-start').addEventListener('click', startGame);
 document.getElementById('btn-retry').addEventListener('click', startGame);
+document.getElementById('btn-quit').addEventListener('click', quitGame);
 </script>
 </body>
 </html>

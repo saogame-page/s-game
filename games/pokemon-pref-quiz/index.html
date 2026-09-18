@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>🗾 ポケモンを探せ！都道府県クイズ — ちびっこミニゲームランド</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Kosugi+Maru&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Kosugi Maru', 'Hiragino Maru Gothic ProN', 'BIZ UDGothic', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow-x: hidden;
+
+  /* カードを邪魔しない、淡い共通パステル背景（他のポケモン系ゲームと同じCSSグラデーション。画像ファイル参照なし） */
+  background-color: #fbf9ff;
+  background-image:
+    radial-gradient(circle, rgba(139, 92, 246, 0.07) 0 1.5px, transparent 2px),
+    radial-gradient(circle, rgba(255, 160, 200, 0.07) 0 1px, transparent 1.6px),
+    linear-gradient(145deg, #fffdfb 0%, #fbf8ff 48%, #f4fbff 100%);
+  background-size: 42px 42px, 42px 42px, 100% 100%;
+  background-position: 0 0, 21px 21px, 0 0;
+  background-repeat: repeat;
+  padding: 12px 12px 48px;
+}
+
+/* ── もどるボタン ── */
+.back-bar { width: 100%; max-width: 680px; margin-bottom: 10px; }
+.back-btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 8px 18px; background: rgba(255,255,255,0.88); color: #aaa;
+  border: 2px solid #ebebeb; border-radius: 999px;
+  font-family: inherit; font-size: 0.88rem; font-weight: bold;
+  cursor: pointer; text-decoration: none; box-shadow: 0 2px 0 #e0e0e0;
+  transition: color 0.15s, transform 0.12s;
+  -webkit-tap-highlight-color: transparent;
+}
+.back-btn:hover  { color: #666; transform: translateY(-1px); }
+.back-btn:active { transform: translateY(1px); }
+
+/* ── メインカード ── */
+#app {
+  background: rgba(255,255,255,0.93);
+  border-radius: 32px;
+  padding: 22px 16px 28px;
+  max-width: 680px;
+  width: 100%;
+  box-shadow:
+    0 0 0 3px #e8d0ff,
+    0 10px 40px rgba(160,80,255,0.10),
+    0 2px 12px rgba(0,0,0,0.07);
+  text-align: center;
+  position: relative;
+}
+
+h1 {
+  font-size: clamp(1.35rem, 4.6vw, 1.9rem);
+  color: #9b59b6;
+  letter-spacing: 1px;
+  text-shadow: 2px 3px 0 #e8d0ff;
+  margin-bottom: 4px;
+}
+
+/* ── 地方選択画面（開始画面） ── */
+#start-screen { display: flex; flex-direction: column; align-items: center; gap: 18px; padding: 8px 0 4px; }
+.region-picker-label { font-size: 0.95rem; font-weight: bold; color: #7c3aed; }
+#pref-region-picker { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.pref-region-chip {
+  font-family: inherit; font-size: 1.02rem; font-weight: bold;
+  padding: 12px 24px; border-radius: 999px; border: 2px solid #d4aaff;
+  background: white; color: #7c3aed; cursor: pointer;
+  transition: transform 0.12s, background 0.15s, color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.pref-region-chip.selected { background: linear-gradient(150deg, #b26cff, #7c3aed); color: white; border-color: #7c3aed; }
+.pref-region-chip.locked { background: #f2f2f2; color: #bbb; border-color: #e0e0e0; cursor: default; }
+.pref-region-chip:not(.locked):hover { transform: translateY(-2px); }
+.pref-region-chip:not(.locked):active { transform: translateY(1px); }
+
+#pref-start-btn {
+  font-family: inherit; font-size: 1.25rem; font-weight: bold;
+  background: linear-gradient(150deg, #b26cff, #7c3aed); color: white;
+  border: none; border-radius: 20px; padding: 18px 40px; cursor: pointer;
+  box-shadow: 0 8px 0 #5b21b6, 0 10px 20px rgba(100,40,200,0.20);
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.12s;
+  letter-spacing: 1px; -webkit-tap-highlight-color: transparent;
+}
+#pref-start-btn:hover  { transform: translateY(-4px); }
+#pref-start-btn:active { transform: translateY(5px); box-shadow: 0 2px 0 #5b21b6; }
+
+.start-howto {
+  font-size: 0.92rem; color: #888; line-height: 1.7;
+  background: #f8f0ff; border: 2px solid #e8d0ff; border-radius: 16px;
+  padding: 12px 16px; max-width: 480px;
+}
+
+/* ── クイズ画面 ── */
+#quiz-screen { display: none; flex-direction: column; }
+
+#progress-bar-wrap { background: #e8d0ff; border-radius: 99px; height: 13px; margin: 8px 0 6px; overflow: hidden; }
+#progress-bar { height: 100%; background: linear-gradient(90deg, #b26cff, #7c3aed); border-radius: 99px; transition: width 0.55s cubic-bezier(0.25, 1, 0.5, 1); }
+#question-num { font-size: 0.88rem; color: #ccc; margin-bottom: 8px; }
+
+/* ── 問題バナー（ポケモン＋出題文） ── */
+.question-banner {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  background: linear-gradient(160deg, #fff9e0, #ffeecc);
+  border: 2px solid #ffcf5c; border-radius: 20px;
+  padding: 12px 16px; margin: 4px 0 14px;
+}
+.qb-pokemon-icon {
+  width: 58px; height: 58px; flex: 0 0 auto;
+  display: flex; align-items: center; justify-content: center;
+  background: white; border-radius: 50%;
+  box-shadow: 0 0 0 3px #ffe0a0;
+  animation: qb-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes qb-pop { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+.qb-pokemon-icon img { width: 84%; height: 84%; object-fit: contain; }
+.qb-pokemon-icon .qb-fallback { font-size: 1.7rem; display: none; }
+#question-text {
+  font-size: clamp(1.15rem, 4.2vw, 1.5rem);
+  color: #7a5a00; font-weight: bold; line-height: 1.5; text-align: left;
+}
+
+/* ── 地図エリア ── */
+.map-wrap {
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto 12px;
+  background: linear-gradient(160deg, #eaf6ff, #f3ebff);
+  border-radius: 22px;
+  padding: 10px;
+  box-shadow: inset 0 0 0 3px #d8e8ff;
+}
+#pref-map { width: 100%; height: auto; display: block; touch-action: manipulation; }
+
+.pref-path {
+  fill: #c9b6f0;
+  stroke: #ffffff;
+  stroke-width: 3;
+  stroke-linejoin: round;
+  cursor: pointer;
+  transition: fill 0.15s ease, transform 0.15s ease;
+}
+.pref-path:hover   { fill: #ac8ce8; }
+.pref-path:active  { fill: #9670da; }
+.pref-path.pref-correct {
+  fill: #4fd868 !important;
+  filter: drop-shadow(0 0 6px rgba(60, 200, 90, 0.85));
+  animation: pref-correct-pulse 0.5s ease;
+}
+@keyframes pref-correct-pulse {
+  0%   { filter: drop-shadow(0 0 0 rgba(60,200,90,0)); }
+  50%  { filter: drop-shadow(0 0 14px rgba(60,200,90,0.95)); }
+  100% { filter: drop-shadow(0 0 6px rgba(60,200,90,0.85)); }
+}
+.pref-path.pref-wrong-flash {
+  fill: #ff6b6b !important;
+  animation: pref-wrong-shake 0.4s ease;
+}
+@keyframes pref-wrong-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-3px); }
+  75% { transform: translateX(3px); }
+}
+.map-wrap.map-locked .pref-path { cursor: default; pointer-events: none; opacity: 0.7; }
+
+/* ── フィードバック ── */
+#feedback {
+  font-size: 1.35rem; font-weight: bold; margin-top: 4px;
+  min-height: 2rem; line-height: 1.3;
+}
+#feedback.correct { color: #27ae60; }
+#feedback.wrong   { color: #e74c3c; }
+
+/* ── GET！ 演出オーバーレイ ── */
+#capture-overlay {
+  display: none;
+  position: absolute;
+  inset: 0;
+  background: rgba(60, 30, 100, 0.35);
+  border-radius: 32px;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+}
+#capture-panel {
+  width: 88%;
+  max-width: 320px;
+  background: linear-gradient(160deg, #fff9e0, #ffe9b0);
+  border: 3px solid #ffcf5c;
+  border-radius: 24px;
+  padding: 20px 16px 22px;
+  text-align: center;
+  display: flex; flex-direction: column; align-items: center;
+  box-shadow: 0 14px 40px rgba(0,0,0,0.25);
+}
+.monsterball {
+  width: 70px; height: 70px; margin: 4px auto 8px;
+  border-radius: 50%;
+  background: linear-gradient(to bottom, #ff5555 0%, #ff5555 46%, #2b2b2b 46%, #2b2b2b 54%, #ffffff 54%, #ffffff 100%);
+  box-shadow: 0 0 0 3px #2b2b2b, 0 6px 14px rgba(0,0,0,0.25);
+  position: relative;
+}
+.monsterball::after {
+  content: '';
+  position: absolute; top: 50%; left: 50%;
+  width: 20px; height: 20px;
+  background: #fff; border: 4px solid #2b2b2b; border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+.monsterball.ball-wobble { animation: ball-wobble 0.9s ease; }
+@keyframes ball-wobble {
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  10% { transform: rotate(-18deg) scale(1.05); }
+  25% { transform: rotate(16deg) scale(1.05); }
+  40% { transform: rotate(-14deg) scale(1.05); }
+  55% { transform: rotate(10deg) scale(1.02); }
+  70% { transform: rotate(-6deg) scale(1); }
+  85% { transform: rotate(3deg) scale(1); }
+}
+#capture-main-msg { font-size: 1.1rem; font-weight: bold; color: #a06600; margin-top: 2px; }
+#capture-reveal { display: none; flex-direction: column; align-items: center; gap: 4px; margin-top: 10px; }
+.capture-poke-visual { width: 84px; height: 84px; display: flex; align-items: center; justify-content: center; }
+.capture-poke-visual img { width: 100%; height: 100%; object-fit: contain; }
+.capture-poke-visual .poke-emoji-fallback { font-size: 2.6rem; }
+#capture-poke-name { font-size: 1.2rem; font-weight: bold; color: #6b3fa0; }
+
+/* ── クリア画面 ── */
+#clear-screen {
+  display: none; flex-direction: column; align-items: center; gap: 14px; padding: 4px 0;
+}
+#clear-emoji { font-size: 5rem; line-height: 1; animation: qb-pop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1); }
+#clear-title { font-size: 1.9rem; color: #9b59b6; text-shadow: 2px 3px 0 #e8d0ff; letter-spacing: 1px; }
+#clear-subtitle { font-size: 1rem; color: #999; }
+
+/* CSSだけのバッジ表現（画像ファイルなし） */
+.pref-badge {
+  width: 140px; height: 140px; border-radius: 50%;
+  background: linear-gradient(155deg, #ffe9a8, #ffb84d);
+  box-shadow:
+    0 0 0 6px #fff,
+    0 0 0 10px #ffb84d,
+    0 10px 24px rgba(200,120,0,0.3);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  position: relative;
+  animation: qb-pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.pref-badge::before {
+  content: '★ ★ ★';
+  position: absolute; top: 14px; font-size: 0.75rem; color: #a06600; letter-spacing: 3px;
+}
+.pref-badge-emoji { font-size: 2.6rem; line-height: 1; }
+.pref-badge-text { font-size: 0.95rem; font-weight: bold; color: #7a3f00; margin-top: 2px; }
+.badge-get-label {
+  font-size: 1.05rem; font-weight: bold; color: #fff;
+  background: linear-gradient(135deg, #ff9800, #ff5f5f);
+  padding: 6px 18px; border-radius: 20px;
+  box-shadow: 0 3px 0 rgba(150,60,0,0.25);
+}
+
+.result-btns { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 300px; margin-top: 6px; }
+#retry-btn, #home-btn {
+  font-family: inherit; font-weight: bold; border-radius: 20px; cursor: pointer;
+  -webkit-tap-highlight-color: transparent; text-decoration: none; display: inline-block;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.12s;
+}
+#retry-btn {
+  font-size: 1.2rem; background: linear-gradient(150deg, #b26cff, #7c3aed); color: white;
+  border: none; padding: 18px 30px;
+  box-shadow: 0 8px 0 #5b21b6, 0 10px 20px rgba(100,40,200,0.20);
+}
+#retry-btn:hover  { transform: translateY(-4px); }
+#retry-btn:active { transform: translateY(5px); box-shadow: 0 2px 0 #5b21b6; }
+#home-btn {
+  font-size: 1rem; background: white; color: #aaa; border: 2px solid #e8e8e8;
+  padding: 14px 24px; box-shadow: 0 5px 0 #ddd;
+}
+#home-btn:hover  { color: #555; transform: translateY(-2px); }
+#home-btn:active { transform: translateY(3px); }
+
+/* ── キラキラパーティクル ── */
+.sparkle-particle {
+  position: fixed; pointer-events: none; z-index: 9999; line-height: 1; user-select: none;
+  animation: sparkle-fly var(--dur, 0.85s) ease-out forwards;
+}
+@keyframes sparkle-fly {
+  0%   { transform: translate(0,0) scale(0.2) rotate(0deg); opacity: 1; }
+  70%  { opacity: 1; }
+  100% { transform: translate(var(--tx),var(--ty)) scale(1.1) rotate(var(--tr)); opacity: 0; }
+}
+
+/* ── レスポンシブ ── */
+@media (max-width: 400px) {
+  #app { padding: 16px 10px 22px; }
+  .qb-pokemon-icon { width: 48px; height: 48px; }
+}
+@media (min-width: 700px) {
+  #app { padding: 30px 30px 34px; }
+  .map-wrap { max-width: 620px; }
+}
+</style>
+</head>
+<body>
+
+<div class="back-bar">
+  <a class="back-btn" href="../../index.html">← トップにもどる</a>
+</div>
+
+<div id="app">
+
+  <!-- ── 地方選択画面 ── -->
+  <div id="start-screen">
+    <h1>🗾 ポケモンを探せ！<br>都道府県クイズ</h1>
+    <div class="region-picker-label">🗺️ ちほうを えらんでね</div>
+    <div id="pref-region-picker"></div>
+    <div class="start-howto">
+      ちずをタップして、ポケモンが あらわれた とどうふけんを あててね！<br>
+      とどうふけんの なまえは ちずに かいてないよ。かたちと ばしょで さがそう！
+    </div>
+    <button id="pref-start-btn">▶ クイズ スタート！</button>
+  </div>
+
+  <!-- ── クイズ画面 ── -->
+  <div id="quiz-screen">
+    <h1>🗾 都道府県クイズ</h1>
+    <div id="progress-bar-wrap"><div id="progress-bar" style="width:0%"></div></div>
+    <div id="question-num"></div>
+
+    <div class="question-banner">
+      <div class="qb-pokemon-icon" id="qb-pokemon-icon">
+        <img id="qb-pokemon-img" src="" alt="">
+        <span class="qb-fallback" id="qb-pokemon-fallback">🐾</span>
+      </div>
+      <div id="question-text"></div>
+    </div>
+
+    <div class="map-wrap" id="map-wrap">
+      <svg id="pref-map" viewBox="0 0 750 840" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+
+    <div id="feedback"></div>
+
+    <!-- ── GET！演出オーバーレイ ── -->
+    <div id="capture-overlay">
+      <div id="capture-panel">
+        <div class="monsterball" id="capture-ball"></div>
+        <div id="capture-main-msg">ポケモンを GET！</div>
+        <div id="capture-reveal">
+          <div class="capture-poke-visual">
+            <img id="capture-poke-img">
+            <span id="capture-poke-fallback" class="poke-emoji-fallback" style="display:none;">🐾</span>
+          </div>
+          <div id="capture-poke-name"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── クリア画面 ── -->
+  <div id="clear-screen">
+    <div id="clear-emoji">🎉</div>
+    <div id="clear-title">かんとうちほう クリア！</div>
+    <div id="clear-subtitle">7つの とどうふけんを ぜんぶ みつけたよ！</div>
+    <div class="pref-badge">
+      <span class="pref-badge-emoji">🏅</span>
+      <span class="pref-badge-text">かんとう</span>
+    </div>
+    <div class="badge-get-label">かんとうバッジ GET！</div>
+    <div class="result-btns">
+      <button id="retry-btn">もういちどあそぶ 🔄</button>
+      <a id="home-btn" href="../../index.html">🏠 トップにもどる</a>
+    </div>
+  </div>
+
+</div>
+
+<script src="../../assets/data/pokemon/pokemon.js"></script>
+<script src="../../assets/data/prefectures/regions.js"></script>
+<script src="../../assets/data/prefectures/kanto.js"></script>
+<script src="data/questions.js"></script>
+<script>
+// ============================================================
+// 都道府県クイズ（関東編）
+// ============================================================
+// 使用データ：
+//   POKEMON_LIST              … assets/data/pokemon/pokemon.js（共有）
+//   PREF_REGIONS               … assets/data/prefectures/regions.js（共有）
+//   PREFECTURE_SHAPES_KANTO     … assets/data/prefectures/kanto.js（地図データ、ローカル保存済み）
+//   PREF_QUIZ_QUESTIONS_KANTO   … games/pokemon-pref-quiz/data/questions.js（このゲーム専用の出題データ）
+//
+// 地図データは実行時に外部から取得することはなく、上記のローカル
+// ファイルだけを参照します（外部プロキシ・外部APIへの依存なし）。
+const IMG_BASE = '../../assets/images/pokemon/';
+
+// ============================================================
+// 地方選択（今は関東のみプレイ可能。将来 available:true が増えたら
+// 自動的に選択肢に表示される）
+// ============================================================
+let prefRegion = (PREF_REGIONS.find(r => r.available) || PREF_REGIONS[0]).key;
+
+function renderPrefRegionPicker() {
+  const wrap = document.getElementById('pref-region-picker');
+  wrap.innerHTML = '';
+  PREF_REGIONS.forEach(r => {
+    const chip = document.createElement('button');
+    chip.className = 'pref-region-chip'
+      + (r.key === prefRegion ? ' selected' : '')
+      + (r.available ? '' : ' locked');
+    chip.textContent = r.available ? r.label : `${r.label} 🔒`;
+    chip.disabled = !r.available;
+    if (r.available) {
+      chip.addEventListener('click', () => {
+        prefRegion = r.key;
+        renderPrefRegionPicker();
+      });
+    }
+    wrap.appendChild(chip);
+  });
+}
+
+function getShapeData() {
+  // 今後、地方ごとの PREFECTURE_SHAPES_* を切り替えられるようにしておく
+  if (prefRegion === 'kanto') return PREFECTURE_SHAPES_KANTO;
+  return PREFECTURE_SHAPES_KANTO;
+}
+function getQuestionData() {
+  if (prefRegion === 'kanto') return PREF_QUIZ_QUESTIONS_KANTO;
+  return PREF_QUIZ_QUESTIONS_KANTO;
+}
+
+// ============================================================
+// 音（Web Audio API／既存ポケモンゲームと同じ実装）
+// ============================================================
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx;
+function getAC() { if (!audioCtx) audioCtx = new AudioCtx(); return audioCtx; }
+
+function playPinPon() {
+  const ac = getAC();
+  const make = (freq, start, dur, vol = 0.45) => {
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = 'sine'; o.frequency.value = freq;
+    o.connect(g); g.connect(ac.destination);
+    g.gain.setValueAtTime(vol, start);
+    g.gain.exponentialRampToValueAtTime(0.001, start + dur);
+    o.start(start); o.stop(start + dur + 0.05);
+  };
+  const t = ac.currentTime;
+  make(880, t,        0.5);
+  make(660, t + 0.22, 0.65);
+}
+function playBuBu() {
+  const ac = getAC();
+  [0, 0.20].forEach(d => {
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = 'square'; o.frequency.value = 170;
+    o.connect(g); g.connect(ac.destination);
+    const t = ac.currentTime + d;
+    g.gain.setValueAtTime(0.28, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+    o.start(t); o.stop(t + 0.25);
+  });
+}
+function playFinale() {
+  const ac = getAC();
+  [523, 659, 784, 1047, 784, 1047, 1319].forEach((f, i) => {
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = 'sine'; o.frequency.value = f;
+    o.connect(g); g.connect(ac.destination);
+    const t = ac.currentTime + i * 0.13;
+    g.gain.setValueAtTime(0.26, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.28);
+    o.start(t); o.stop(t + 0.32);
+  });
+}
+function playFlip() {
+  const ac = getAC();
+  const o = ac.createOscillator(), g = ac.createGain();
+  o.type = 'triangle'; o.frequency.value = 320;
+  o.connect(g); g.connect(ac.destination);
+  const t = ac.currentTime;
+  g.gain.setValueAtTime(0.3, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+  o.start(t); o.stop(t + 0.32);
+}
+
+// ============================================================
+// キラキラエフェクト
+// ============================================================
+const SPARKS = ['⭐','✨','🌟','💫','⚡','✨','🌟','💛','⭐','✨'];
+function launchSparkles(cx, cy) {
+  SPARKS.forEach((em, i) => {
+    const el = document.createElement('span');
+    el.className = 'sparkle-particle';
+    el.textContent = em;
+    const sz  = 1.1 + Math.random() * 1.3;
+    el.style.fontSize = sz + 'rem';
+    el.style.left     = cx + 'px';
+    el.style.top      = cy + 'px';
+    const angle = (360 / SPARKS.length) * i + Math.random() * 15;
+    const dist  = 70 + Math.random() * 110;
+    const tx = Math.cos(angle * Math.PI / 180) * dist;
+    const ty = Math.sin(angle * Math.PI / 180) * dist - 50;
+    el.style.setProperty('--tx',  tx + 'px');
+    el.style.setProperty('--ty',  ty + 'px');
+    el.style.setProperty('--tr',  ((Math.random() - 0.5) * 540) + 'deg');
+    el.style.setProperty('--dur', (0.75 + Math.random() * 0.35) + 's');
+    el.style.animationDelay = (i * 0.042) + 's';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 1200);
+  });
+}
+
+// ============================================================
+// 出題ロジック
+// ============================================================
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+let sessionQueue = [];   // シャッフル済みの出題リスト（同じ問題が連続しない）
+let currentIndex = 0;
+let answered = false;    // 正解演出中の二重タップ防止
+
+function findPref(code) {
+  return getShapeData().prefectures.find(p => p.code === code);
+}
+function findPokemon(id) {
+  return POKEMON_LIST.find(p => p.id === id);
+}
+
+function buildSessionQueue() {
+  return shuffle(getQuestionData());
+}
+
+// ============================================================
+// 地図の描画
+// ============================================================
+function renderMap() {
+  const svg = document.getElementById('pref-map');
+  const shapeData = getShapeData();
+  svg.setAttribute('viewBox', shapeData.viewBox);
+  svg.innerHTML = '';
+  shapeData.prefectures.forEach(pref => {
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', pref.d);
+    path.setAttribute('class', 'pref-path');
+    path.setAttribute('data-code', pref.code);
+    path.setAttribute('role', 'button');
+    path.setAttribute('aria-label', '都道府県を えらぶ');
+    path.addEventListener('click', () => handlePrefClick(pref.code, path));
+    svg.appendChild(path);
+  });
+}
+
+function resetMapState() {
+  document.querySelectorAll('.pref-path').forEach(p => {
+    p.classList.remove('pref-correct', 'pref-wrong-flash');
+  });
+  document.getElementById('map-wrap').classList.remove('map-locked');
+}
+
+// ============================================================
+// 出題表示
+// ============================================================
+function currentQuestion() { return sessionQueue[currentIndex]; }
+
+function loadPokemonIcon(pokemon) {
+  const img = document.getElementById('qb-pokemon-img');
+  const fb  = document.getElementById('qb-pokemon-fallback');
+  fb.style.display = 'none';
+  img.style.display = 'block';
+  img.alt = pokemon.name;
+  img.onerror = () => { img.style.display = 'none'; fb.style.display = 'block'; };
+  img.src = IMG_BASE + pokemon.image;
+}
+
+function showQuestion() {
+  answered = false;
+  resetMapState();
+
+  const q = currentQuestion();
+  const pokemon = findPokemon(q.pokemon_id);
+  const pref = findPref(q.pref_code);
+
+  document.getElementById('progress-bar').style.width =
+    (currentIndex / sessionQueue.length * 100) + '%';
+  document.getElementById('question-num').textContent =
+    `もんだい ${currentIndex + 1} / ${sessionQueue.length}`;
+
+  loadPokemonIcon(pokemon);
+  document.getElementById('question-text').textContent =
+    `${pokemon.name}が ${pref.name_hiragana} に あらわれた！`;
+
+  document.getElementById('feedback').textContent = '';
+  document.getElementById('feedback').className = '';
+}
+
+// ============================================================
+// タップ処理
+// ============================================================
+function handlePrefClick(code, pathEl) {
+  if (answered) return;
+
+  const q = currentQuestion();
+  const fb = document.getElementById('feedback');
+
+  if (code === q.pref_code) {
+    answered = true;
+    document.getElementById('map-wrap').classList.add('map-locked');
+    pathEl.classList.add('pref-correct');
+
+    const pref = findPref(q.pref_code);
+    fb.textContent = `⭕ せいかい！ここが ${pref.name_hiragana}！`;
+    fb.className = 'correct';
+    playPinPon();
+
+    const r = pathEl.getBoundingClientRect();
+    launchSparkles(r.left + r.width / 2, r.top + r.height / 2);
+
+    setTimeout(() => triggerCaptureOverlay(q.pokemon_id), 550);
+  } else {
+    fb.textContent = '❌ おしい！そこじゃないよ！';
+    fb.className = 'wrong';
+    playBuBu();
+
+    pathEl.classList.remove('pref-wrong-flash');
+    void pathEl.offsetWidth;
+    pathEl.classList.add('pref-wrong-flash');
+    setTimeout(() => pathEl.classList.remove('pref-wrong-flash'), 450);
+  }
+}
+
+// ============================================================
+// GET！演出
+// ============================================================
+function triggerCaptureOverlay(pokemonId) {
+  const overlay = document.getElementById('capture-overlay');
+  const ball    = document.getElementById('capture-ball');
+  const reveal  = document.getElementById('capture-reveal');
+
+  overlay.style.display = 'flex';
+  reveal.style.display  = 'none';
+
+  ball.classList.remove('ball-wobble');
+  void ball.offsetWidth;
+  ball.classList.add('ball-wobble');
+  playFlip();
+
+  setTimeout(() => {
+    const pokemon = findPokemon(pokemonId);
+    reveal.style.display = 'flex';
+    const img = document.getElementById('capture-poke-img');
+    const pfb = document.getElementById('capture-poke-fallback');
+    img.style.display = 'block';
+    pfb.style.display = 'none';
+    img.onerror = () => { img.style.display = 'none'; pfb.style.display = 'block'; };
+    img.src = IMG_BASE + pokemon.image;
+    document.getElementById('capture-poke-name').textContent = pokemon.name + ' GET！';
+
+    playPinPon();
+    const r = document.querySelector('.capture-poke-visual').getBoundingClientRect();
+    launchSparkles(r.left + r.width / 2, r.top + r.height / 2);
+  }, 850);
+
+  setTimeout(() => {
+    overlay.style.display = 'none';
+    advanceQuestion();
+  }, 2200);
+}
+
+function advanceQuestion() {
+  currentIndex++;
+  if (currentIndex >= sessionQueue.length) showClearScreen();
+  else showQuestion();
+}
+
+// ============================================================
+// 画面切り替え
+// ============================================================
+function showStartScreen() {
+  document.getElementById('quiz-screen').style.display  = 'none';
+  document.getElementById('clear-screen').style.display = 'none';
+  document.getElementById('start-screen').style.display  = 'flex';
+  renderPrefRegionPicker();
+}
+
+function startQuiz() {
+  sessionQueue = buildSessionQueue();
+  currentIndex = 0;
+  renderMap();
+
+  document.getElementById('start-screen').style.display = 'none';
+  document.getElementById('clear-screen').style.display = 'none';
+  document.getElementById('quiz-screen').style.display  = 'flex';
+
+  showQuestion();
+}
+
+function showClearScreen() {
+  document.getElementById('progress-bar').style.width = '100%';
+  document.getElementById('quiz-screen').style.display  = 'none';
+  document.getElementById('clear-screen').style.display = 'flex';
+
+  playFinale();
+  const cx = window.innerWidth / 2, cy = window.innerHeight / 2;
+  setTimeout(() => launchSparkles(cx, cy),          150);
+  setTimeout(() => launchSparkles(cx - 80, cy - 60), 500);
+  setTimeout(() => launchSparkles(cx + 80, cy - 60), 750);
+}
+
+// ── イベント ──
+document.getElementById('pref-start-btn').addEventListener('click', startQuiz);
+document.getElementById('retry-btn').addEventListener('click', startQuiz);
+
+showStartScreen();
+</script>
+</body>
+</html>

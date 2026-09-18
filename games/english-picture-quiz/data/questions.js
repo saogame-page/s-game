@@ -128,11 +128,11 @@ const CARD_DATA = [
   { id: 15, en: "Dragonfly", ja: "とんぼ",     category: "insects", image: null, rarity: "COMMON" },
 
   // --- のりもの ---
-  { id: 16, en: "Car",      ja: "くるま",   category: "vehicles", image: null, rarity: "COMMON" },
-  { id: 17, en: "Bus",      ja: "ばす",     category: "vehicles", image: null, rarity: "COMMON" },
-  { id: 18, en: "Train",    ja: "でんしゃ", category: "vehicles", image: null, rarity: "COMMON" },
-  { id: 19, en: "Airplane", ja: "ひこうき", category: "vehicles", image: null, rarity: "COMMON" },
-  { id: 20, en: "Ship",     ja: "ふね",     category: "vehicles", image: null, rarity: "COMMON" },
+  { id: 16, en: "Car",      ja: "くるま",   category: "vehicles", image: "../../assets/images/vehicles/kuruma.png", rarity: "COMMON" },
+  { id: 17, en: "Bus",      ja: "ばす",     category: "vehicles", image: "../../assets/images/vehicles/basu.png", rarity: "COMMON" },
+  { id: 18, en: "Train",    ja: "でんしゃ", category: "vehicles", image: "../../assets/images/vehicles/densha.png", rarity: "COMMON" },
+  { id: 19, en: "Airplane", ja: "ひこうき", category: "vehicles", image: "../../assets/images/vehicles/hikouki.png", rarity: "COMMON" },
+  { id: 20, en: "Ship",     ja: "ふね",     category: "vehicles", image: "../../assets/images/vehicles/fune.png", rarity: "COMMON" },
 
   // --- にほんのようかい ---
   { id: 21, en: "Kappa",     ja: "かっぱ",     category: "yokai", image: null, rarity: "COMMON" },
@@ -149,11 +149,11 @@ const CARD_DATA = [
   { id: 30, en: "Turtle",  ja: "かめ",   category: "sea", image: null, rarity: "COMMON" },
 
   // --- そうか（草花） ---
-  { id: 31, en: "Sunflower",     ja: "ひまわり",     category: "plants", image: null, rarity: "COMMON" },
-  { id: 32, en: "Tulip",         ja: "ちゅーりっぷ", category: "plants", image: null, rarity: "COMMON" },
-  { id: 33, en: "Rose",          ja: "ばら",         category: "plants", image: null, rarity: "COMMON" },
-  { id: 34, en: "Cherry Blossom",ja: "さくら",       category: "plants", image: null, rarity: "COMMON" },
-  { id: 35, en: "Sprout",        ja: "め",           category: "plants", image: null, rarity: "COMMON" },
+  { id: 31, en: "Sunflower",     ja: "ひまわり",     category: "plants", image: "../../assets/images/plants/himawari.png", rarity: "COMMON" },
+  { id: 32, en: "Tulip",         ja: "ちゅーりっぷ", category: "plants", image: "../../assets/images/plants/churippu.png", rarity: "COMMON" },
+  { id: 33, en: "Rose",          ja: "ばら",         category: "plants", image: "../../assets/images/plants/bara.png", rarity: "COMMON" },
+  { id: 34, en: "Cherry Blossom",ja: "さくら",       category: "plants", image: "../../assets/images/plants/sakura.png", rarity: "COMMON" },
+  { id: 35, en: "Sprout",        ja: "め",           category: "plants", image: "../../assets/images/plants/me.png", rarity: "COMMON" },
 
   // --- わくせい・うちゅう ---
   { id: 36, en: "Mars",   ja: "かせい",   category: "planets", image: null, rarity: "COMMON" },

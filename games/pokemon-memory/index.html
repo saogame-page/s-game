@@ -16,12 +16,14 @@ body {
   flex-direction: column;
   align-items: center;
   overflow-x: hidden;
-  background-color: #fef6ff;
+  /* クイズ画面と揃えた、カードを邪魔しない淡いパステル背景 */
+  background-color: #fbf9ff;
   background-image:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Ctext y='72' font-size='54' opacity='0.045'%3E⚡%3C/text%3E%3C/svg%3E"),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Ctext x='80' y='152' font-size='54' opacity='0.045'%3E✨%3C/text%3E%3C/svg%3E");
-  background-size: 320px 320px;
-  background-position: 0 0, 160px 160px;
+    radial-gradient(circle, rgba(139, 92, 246, 0.07) 0 1.5px, transparent 2px),
+    radial-gradient(circle, rgba(255, 160, 200, 0.07) 0 1px, transparent 1.6px),
+    linear-gradient(145deg, #fffdfb 0%, #fbf8ff 48%, #f4fbff 100%);
+  background-size: 42px 42px, 42px 42px, 100% 100%;
+  background-position: 0 0, 21px 21px, 0 0;
   background-repeat: repeat;
   padding: 12px 12px 48px;
 }

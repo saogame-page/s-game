@@ -33,11 +33,104 @@
     }
 
     /* ================================================================
-       HUD行（タイマー＋やめるボタン）
+       レベル選択画面
+    ================================================================ */
+    #level-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      width: 100%;
+      max-width: 440px;
+    }
+    #level-screen.hide { display: none; }
+
+    .level-select-label {
+      font-size: clamp(1rem, 4vw, 1.2rem);
+      font-weight: bold;
+      color: #fff;
+      text-shadow: 2px 3px 0 rgba(0,80,100,0.22);
+      text-align: center;
+      margin-bottom: 2px;
+    }
+
+    .level-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 100%;
+    }
+
+    .level-btn {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      width: 100%;
+      padding: 16px 22px;
+      border: none;
+      border-radius: 22px;
+      font-family: 'Kosugi Maru', sans-serif;
+      cursor: pointer;
+      text-align: left;
+      background: rgba(255,255,255,0.92);
+      box-shadow: 0 5px 0 rgba(0,0,0,0.1), 0 7px 16px rgba(0,0,0,0.1);
+      transition: transform 0.12s, box-shadow 0.12s;
+      touch-action: manipulation;
+    }
+    .level-btn:active {
+      transform: translateY(4px);
+      box-shadow: 0 1px 0 rgba(0,0,0,0.1);
+      transition-duration: 0.07s;
+    }
+
+    .level-btn-main {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .level-btn-num {
+      font-size: 1.15rem;
+      font-weight: bold;
+      color: #333;
+    }
+    .level-btn-sub {
+      font-size: 0.78rem;
+      color: #888;
+    }
+
+    .level-tag {
+      flex-shrink: 0;
+      font-size: 0.78rem;
+      font-weight: bold;
+      padding: 6px 14px;
+      border-radius: 50px;
+      color: #fff;
+      white-space: nowrap;
+    }
+    .level-tag.tag-easy   { background: linear-gradient(170deg, #6fcf60, #3da82e); }
+    .level-tag.tag-normal { background: linear-gradient(170deg, #ffbe5c, #f39c12); }
+    .level-tag.tag-hard   { background: linear-gradient(170deg, #ff8f8f, #e05555); }
+
+    /* ================================================================
+       ゲーム画面（レベル選択後に表示）
+    ================================================================ */
+    #game-screen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+    }
+    #game-screen.show { display: flex; }
+
+    /* ================================================================
+       HUD行（レベル表示＋タイマー＋やめるボタン）
     ================================================================ */
     .hud-row {
       display: flex;
       align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
       gap: 10px;
       margin-bottom: 14px;
     }
@@ -48,11 +141,16 @@
       font-size: 1rem;
       color: #666;
       box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+      white-space: nowrap;
     }
     #hud-time {
       color: #e67e22;
       font-weight: bold;
       font-size: 1.25rem;
+    }
+    #hud-level {
+      color: #3da82e;
+      font-weight: bold;
     }
 
     /* やめるボタン */
@@ -79,13 +177,40 @@
 
     /* ================================================================
        ボード（カードグリッド）
+       レベルごとに .cols-3 〜 .cols-5 を board 要素に付与して列数を
+       切り替える。スマホ幅では無理に列数を増やさず、画面幅が
+       広がるにつれて段階的に列数を増やして横に広げる。
     ================================================================ */
     .board {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
       gap: clamp(8px, 2.5vw, 14px);
       width: 100%;
+      margin: 0 auto;
+    }
+
+    /* デフォルト（スマホ幅）：どのレベルでも3列までにおさえる */
+    .board.cols-3,
+    .board.cols-4,
+    .board.cols-5 {
+      grid-template-columns: repeat(3, 1fr);
       max-width: 420px;
+    }
+
+    /* 480px〜：4列レベルは4列に、5列レベルもいったん4列に広げる */
+    @media (min-width: 480px) {
+      .board.cols-4,
+      .board.cols-5 {
+        grid-template-columns: repeat(4, 1fr);
+        max-width: 565px;
+      }
+    }
+
+    /* 620px〜（タブレット・PC幅）：5列レベルはここで5列になる */
+    @media (min-width: 620px) {
+      .board.cols-5 {
+        grid-template-columns: repeat(5, 1fr);
+        max-width: 710px;
+      }
     }
 
     /* ================================================================
@@ -138,9 +263,14 @@
 
     /* ── 裏面 ── */
     .card-back {
-      background: linear-gradient(145deg, #667eea 0%, #764ba2 100%);
+      background-color: #fff9fc;
+      background-image:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='110' height='128' viewBox='0 0 110 128'%3E%3Cg fill='none' stroke-linecap='round'%3E%3Cpath d='M24 36c2 14 7 22 4 35' stroke='%23e6b8cb' stroke-width='1.2' opacity='.55'/%3E%3Cellipse cx='22' cy='24' rx='12' ry='15' fill='%23f6c9d9' stroke='%23edb8cc' opacity='.62'/%3E%3Cpath d='m19 39 3-4 3 4z' fill='%23edb8cc' opacity='.62'/%3E%3Cpath d='M83 66c-2 16-8 24-5 39' stroke='%23b8cfea' stroke-width='1.2' opacity='.55'/%3E%3Cellipse cx='85' cy='51' rx='12' ry='15' fill='%23cfe3f7' stroke='%23b9d3ed' opacity='.64'/%3E%3Cpath d='m82 66 3-4 3 4z' fill='%23b9d3ed' opacity='.64'/%3E%3Cpath d='M48 103c2 9 5 14 3 22' stroke='%23d2c0ea' stroke-width='1.2' opacity='.5'/%3E%3Cellipse cx='47' cy='91' rx='10' ry='13' fill='%23e5d8f5' stroke='%23d5c3eb' opacity='.6'/%3E%3Cpath d='m44 104 3-4 3 4z' fill='%23d5c3eb' opacity='.6'/%3E%3C/g%3E%3C/svg%3E"),
+        linear-gradient(145deg, #fffafd 0%, #f4f1ff 52%, #eef8ff 100%);
+      background-size: 110px 128px, 100% 100%;
+      border: 2px solid rgba(211, 188, 229, 0.68);
       font-size: clamp(1.8rem, 8vw, 2.8rem);
-      color: rgba(255,255,255,0.9);
+      color: #9c79b8;
       letter-spacing: 0;
       gap: 4px;
       overflow: hidden;
@@ -151,18 +281,20 @@
       position: absolute;
       top: 5px; left: 10%; right: 10%;
       height: 44%;
-      background: linear-gradient(180deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0) 100%);
+      background: linear-gradient(180deg, rgba(255,255,255,0.72) 0%, rgba(255,255,255,0) 100%);
       border-radius: 0 0 50% 50%;
       pointer-events: none;
     }
     .card-back-star {
       font-size: clamp(1.6rem, 7vw, 2.4rem);
-      opacity: 0.8;
+      opacity: 0.58;
+      filter: saturate(0.65);
     }
     .card-back-label {
       font-size: clamp(0.55rem, 2.2vw, 0.75rem);
-      color: rgba(255,255,255,0.75);
+      color: #9273aa;
       letter-spacing: 1px;
+      font-weight: bold;
     }
 
     /* ── 表面 ── */
@@ -410,12 +542,22 @@
 
   <h1>🌍 国旗神経衰弱</h1>
 
-  <div class="hud-row">
-    <div class="hud">⏱ <span id="hud-time">0</span> びょう</div>
-    <button class="btn-quit" onclick="showQuit()">やめる</button>
+  <!-- レベル選択画面 -->
+  <div id="level-screen">
+    <p class="level-select-label">🎚️ レベルをえらんでね</p>
+    <div class="level-grid" id="level-grid"></div>
   </div>
 
-  <div class="board" id="board"></div>
+  <!-- ゲーム画面 -->
+  <div id="game-screen">
+    <div class="hud-row">
+      <div class="hud">🌍 <span id="hud-level">レベル1</span></div>
+      <div class="hud">⏱ <span id="hud-time">0</span> びょう</div>
+      <button class="btn-quit" onclick="showQuit()">やめる</button>
+    </div>
+
+    <div class="board" id="board"></div>
+  </div>
 
   <!-- やめる確認モーダル -->
   <div id="quit-screen">
@@ -425,6 +567,7 @@
       <div class="btn-group">
         <button class="game-btn btn-green" onclick="closeQuit()">つづける</button>
         <button class="game-btn btn-gray" onclick="initGame(); closeQuit()">はじめから</button>
+        <button class="game-btn btn-gray" onclick="backToLevelSelect(); closeQuit()">レベルをえらぶにもどる</button>
         <a class="game-btn btn-gray" href="../../index.html">トップにもどる</a>
       </div>
     </div>
@@ -434,7 +577,7 @@
   <div id="clear-screen">
     <div class="clear-box">
       <div class="clear-title">🎉 クリア！</div>
-      <div class="clear-subtitle">すごい！ぜんぶ そろえたね！</div>
+      <div class="clear-subtitle" id="clear-subtitle">すごい！ぜんぶ そろえたね！</div>
       <div class="clear-time">
         <strong id="clear-sec">0</strong> びょうでクリア！
       </div>
@@ -445,7 +588,9 @@
       </div>
 
       <div class="btn-group">
-        <button class="game-btn btn-green" onclick="initGame()">もういちどあそぶ</button>
+        <button class="game-btn btn-green" id="next-level-btn" onclick="goNextLevel()">つぎのレベルへ ▶</button>
+        <button class="game-btn btn-gray" onclick="initGame()">もういちどあそぶ</button>
+        <button class="game-btn btn-gray" onclick="backToLevelSelect()">レベルをえらぶにもどる</button>
         <a class="game-btn btn-gray" href="../../index.html">トップにもどる</a>
       </div>
     </div>
@@ -457,18 +602,43 @@
     // ============================================================
     const FLAG_CDN = 'https://flagcdn.com/w160/';
 
-    const COUNTRIES = [
-      { code: 'jp', emoji: '🇯🇵', name: '日本',           ruby: 'にほん' },
-      { code: 'us', emoji: '🇺🇸', name: 'アメリカ',       ruby: '' },
-      { code: 'fr', emoji: '🇫🇷', name: 'フランス',       ruby: '' },
-      { code: 'kr', emoji: '🇰🇷', name: '韓国',           ruby: 'かんこく' },
-      { code: 'au', emoji: '🇦🇺', name: 'オーストラリア', ruby: '' },
-      { code: 'br', emoji: '🇧🇷', name: 'ブラジル',       ruby: '' },
+    // 国データ（図鑑番号ではなく国コードで管理。レベルごとに使う国を
+    // codes で絞り込む）
+    const COUNTRY_POOL = {
+      jp: { emoji: '🇯🇵', name: '日本',           ruby: 'にほん' },
+      us: { emoji: '🇺🇸', name: 'アメリカ',       ruby: '' },
+      fr: { emoji: '🇫🇷', name: 'フランス',       ruby: '' },
+      kr: { emoji: '🇰🇷', name: '韓国',           ruby: 'かんこく' },
+      au: { emoji: '🇦🇺', name: 'オーストラリア', ruby: '' },
+      br: { emoji: '🇧🇷', name: 'ブラジル',       ruby: '' },
+      it: { emoji: '🇮🇹', name: 'イタリア',       ruby: '' },
+      de: { emoji: '🇩🇪', name: 'ドイツ',         ruby: '' },
+      nl: { emoji: '🇳🇱', name: 'オランダ',       ruby: '' },
+      ru: { emoji: '🇷🇺', name: 'ロシア',         ruby: '' },
+    };
+
+    // ============================================================
+    //  レベル設定
+    // ============================================================
+    // レベルが上がるほどペア数（＝カード枚数）と使う国の種類を増やす。
+    // レベル3までは既存の6ヶ国（従来のゲームと同じ組み合わせ）、
+    // レベル4・5で新しい国を追加し、レベル5では見た目の似た配色の
+    // 国旗（オランダ／ロシアの横三色旗）もあえて混ぜて難易度を上げている。
+    // cols : 画面が十分広いときにボードを何列で表示するか（PC幅の目安）。
+    //        スマホ幅では自動的に少ない列数に切り替わる（CSS側で対応）。
+    const LEVELS = [
+      { level: 1, pairs: 3,  cols: 3, label: 'かんたん',   tag: 'tag-easy',   codes: ['jp','us','fr'] },
+      { level: 2, pairs: 4,  cols: 4, label: 'かんたん',   tag: 'tag-easy',   codes: ['jp','us','fr','kr'] },
+      { level: 3, pairs: 6,  cols: 4, label: 'ふつう',     tag: 'tag-normal', codes: ['jp','us','fr','kr','au','br'] },
+      { level: 4, pairs: 8,  cols: 4, label: 'ふつう',     tag: 'tag-normal', codes: ['jp','us','fr','kr','au','br','it','de'] },
+      { level: 5, pairs: 10, cols: 5, label: 'むずかしい', tag: 'tag-hard',   codes: ['jp','us','fr','kr','au','br','it','de','nl','ru'] },
     ];
 
     // ============================================================
     //  状態
     // ============================================================
+    let currentLevel = 1;
+    let COUNTRIES  = [];
     let flipped    = [];
     let matchedCnt = 0;
     let locked     = false;
@@ -489,9 +659,58 @@
     }
 
     // ============================================================
+    //  レベル選択画面
+    // ============================================================
+    function renderLevelScreen() {
+      document.getElementById('game-screen').classList.remove('show');
+      document.getElementById('level-screen').classList.remove('hide');
+      document.getElementById('clear-screen').classList.remove('show');
+      document.getElementById('quit-screen').classList.remove('show');
+      clearInterval(clockTimer);
+
+      const grid = document.getElementById('level-grid');
+      grid.innerHTML = '';
+      LEVELS.forEach(lv => {
+        const btn = document.createElement('button');
+        btn.className = 'level-btn';
+        btn.innerHTML = `
+          <span class="level-btn-main">
+            <span class="level-btn-num">レベル${lv.level}</span>
+            <span class="level-btn-sub">${lv.pairs}ペア（${lv.pairs * 2}まい）</span>
+          </span>
+          <span class="level-tag ${lv.tag}">${lv.label}</span>
+        `;
+        btn.addEventListener('click', () => startLevel(lv.level));
+        grid.appendChild(btn);
+      });
+    }
+
+    function startLevel(levelNum) {
+      currentLevel = levelNum;
+      document.getElementById('level-screen').classList.add('hide');
+      document.getElementById('game-screen').classList.add('show');
+      initGame();
+    }
+
+    function backToLevelSelect() {
+      renderLevelScreen();
+    }
+
+    function goNextLevel() {
+      if (currentLevel < LEVELS.length) {
+        startLevel(currentLevel + 1);
+      } else {
+        backToLevelSelect();
+      }
+    }
+
+    // ============================================================
     //  ゲーム初期化
     // ============================================================
     function initGame() {
+      const levelConf = LEVELS[currentLevel - 1];
+      COUNTRIES = levelConf.codes.map(code => ({ code, ...COUNTRY_POOL[code] }));
+
       flipped    = [];
       matchedCnt = 0;
       locked     = false;
@@ -499,11 +718,14 @@
       pausedAt   = null;
       clearInterval(clockTimer);
       document.getElementById('hud-time').textContent = '0';
+      document.getElementById('hud-level').textContent =
+        `レベル${levelConf.level}（${levelConf.label}）`;
       document.getElementById('clear-screen').classList.remove('show');
       document.getElementById('quit-screen').classList.remove('show');
 
       const deck = shuffle([...COUNTRIES, ...COUNTRIES]);
       const board = document.getElementById('board');
+      board.className = 'board cols-' + levelConf.cols;
       board.innerHTML = '';
 
       deck.forEach(country => {
@@ -517,7 +739,7 @@
         card.innerHTML = `
           <div class="card-inner">
             <div class="card-face card-back">
-              <div class="card-back-star">🌟</div>
+              <div class="card-back-star">🎈</div>
               <div class="card-back-label">こっき</div>
             </div>
             <div class="card-face card-front">
@@ -602,6 +824,13 @@
       clearInterval(clockTimer);
       const sec = Math.floor((Date.now() - startTime) / 1000);
       document.getElementById('clear-sec').textContent = sec;
+
+      const isMaxLevel = currentLevel >= LEVELS.length;
+      document.getElementById('clear-subtitle').textContent =
+        isMaxLevel ? 'すごい！ぜんぶのレベルをクリアしたよ！' : 'すごい！ぜんぶ そろえたね！';
+      const nextBtn = document.getElementById('next-level-btn');
+      nextBtn.style.display = isMaxLevel ? 'none' : '';
+
       document.getElementById('clear-screen').classList.add('show');
       launchConfetti();
     }
@@ -659,7 +888,7 @@
     // ============================================================
     //  起動
     // ============================================================
-    initGame();
+    renderLevelScreen();
   </script>
 </body>
 </html>
